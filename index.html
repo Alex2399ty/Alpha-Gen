@@ -10,20 +10,23 @@
 </head>
 <body>
 
+<!-- ══ SIDEBAR OVERLAY ══ -->
+<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
 <!-- ══ SIDEBAR ══ -->
 <aside class="sb" id="sb">
   <div class="sb-logo"><div class="mark">Alpha<span>Gen</span></div><div class="sub">AI Portfolio Intelligence</div></div>
   <nav class="sb-nav">
     <div class="nl">Investing</div>
-    <div class="ni on" onclick="nav('portfolio',this)"><span class="ico">📊</span>Portfolio<span class="nbadge bg">+2.26%</span></div>
-    <div class="ni" onclick="nav('simulation',this)"><span class="ico">🧪</span>Simulation Lab<span class="nbadge bb">NEW</span></div>
-    <div class="ni" onclick="nav('dividends',this)"><span class="ico">💰</span>Dividends</div>
-    <div class="ni" onclick="nav('watchlist',this)"><span class="ico">👁</span>Watchlist<span class="nbadge br">3</span></div>
+    <div class="ni on" onclick="nav('portfolio',this);closeSidebar()"><span class="ico">📊</span>Portfolio<span class="nbadge bg">+2.26%</span></div>
+    <div class="ni" onclick="nav('simulation',this);closeSidebar()"><span class="ico">🧪</span>Simulation Lab<span class="nbadge bb">NEW</span></div>
+    <div class="ni" onclick="nav('dividends',this);closeSidebar()"><span class="ico">💰</span>Dividends</div>
+    <div class="ni" onclick="nav('watchlist',this);closeSidebar()"><span class="ico">👁</span>Watchlist<span class="nbadge br">3</span></div>
     <div class="nl">Insights</div>
-    <div class="ni" onclick="nav('learn',this)"><span class="ico">🎓</span>Learn<span class="nbadge bb">5 new</span></div>
-    <div class="ni" onclick="nav('markets',this)"><span class="ico">🌍</span>Markets</div>
+    <div class="ni" onclick="nav('learn',this);closeSidebar()"><span class="ico">🎓</span>Learn<span class="nbadge bb">5 new</span></div>
+    <div class="ni" onclick="nav('markets',this);closeSidebar()"><span class="ico">🌍</span>Markets</div>
     <div class="nl">Account</div>
-    <div class="ni" onclick="nav('pricing',this)"><span class="ico">⚡</span>Upgrade</div>
+    <div class="ni" onclick="nav('pricing',this);closeSidebar()"><span class="ico">⚡</span>Upgrade</div>
   </nav>
   <div class="sb-foot">
     <div class="user-row" onclick="openLogin()"><div class="avatar" id="av">👤</div><div><div class="uname" id="uname">Guest</div><div class="utier" id="utier">Free Plan · Click to sign in</div></div></div>
@@ -89,6 +92,9 @@
   <div class="ticker-bar"><div class="tk-track" id="ticker"></div></div>
   <div class="topbar">
     <div class="tb-l">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="4.5" x2="16" y2="4.5"/><line x1="2" y1="9" x2="16" y2="9"/><line x1="2" y1="13.5" x2="16" y2="13.5"/></svg>
+      </button>
       <div><div class="tb-title" id="tb-title">Portfolio</div><div class="tb-sub" id="tb-sub">Growth Seeker · Synced with Robinhood</div></div>
     </div>
     <div class="tb-r">
@@ -214,6 +220,7 @@
             <div class="sp" data-g="div" style="--tc:var(--gld);--td:var(--gdim)">High Yield</div>
           </div>
           <div id="yield-row" style="display:none;" class="srr"><div class="srr-top"><span class="srr-lbl">Min Target Yield</span><span class="srr-val" id="sv-yield">2.5%</span></div><input type="range" min="0.5" max="7" value="2.5" step="0.5" id="sr-yield" oninput="sv1('sv-yield',this.value+'%')"/></div>
+          <div class="expl" id="div-expl"><strong>Growth Focus:</strong> Reinvested earnings over cash distributions. Best for investors under 40 — compounding growth outperforms dividend income over 15+ year horizons.</div>
           <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--sur);border-radius:var(--rs);">
             <div class="tog-sw" id="drip-tog" onclick="this.classList.toggle('off')"><div class="tok"></div></div>
             <div><div style="font-size:10px;font-family:var(--F);font-weight:700;">DRIP Auto-Reinvestment</div><div style="font-size:9px;color:var(--mut);">Dividends automatically buy more shares</div></div>

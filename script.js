@@ -382,5 +382,42 @@ function qshow(){
 // MISC
 // ════════════════════════════════════════
 function copyRef(btn){navigator.clipboard.writeText('https://alphagen.app/ref/ALEX47').catch(()=>{});btn.textContent='Copied ✓';btn.style.background='var(--blu)';setTimeout(()=>{btn.textContent='Copy';btn.style.background='';},2000);}
+
+// ════════════════════════════════════════
+// MOBILE SIDEBAR
+// ════════════════════════════════════════
+function toggleSidebar(){
+  const sb=document.getElementById('sb');
+  const ov=document.getElementById('sb-overlay');
+  const isOpen=sb.classList.contains('open');
+  sb.classList.toggle('open',!isOpen);
+  ov.classList.toggle('on',!isOpen);
+  document.body.style.overflow=isOpen?'':'hidden';
+}
+function closeSidebar(){
+  const sb=document.getElementById('sb');
+  const ov=document.getElementById('sb-overlay');
+  if(sb.classList.contains('open')){
+    sb.classList.remove('open');
+    ov.classList.remove('on');
+    document.body.style.overflow='';
+  }
+}
+// Only lock scroll on mobile
+window.addEventListener('resize',()=>{if(window.innerWidth>768)closeSidebar();});
+
+// ════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeWhy();
+    closeThesis();
+    closeCheckin();
+    closeSidebar();
+    closeLogin();
+  }
+});
+
 // Init slider display values
 svUp();
