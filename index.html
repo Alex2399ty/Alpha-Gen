@@ -110,11 +110,20 @@
 <div class="pg on" id="pg-portfolio">
   <div class="ph"><div class="pe">// Portfolio</div><h1 class="pt">Your <em>AlphaGen</em> Portfolio</h1><p class="ps">AI-powered. Fully transparent. Every signal, decision, and reasoning shown.</p></div>
 
+  <!-- Agent Bar -->
+  <div class="agent-bar" id="agent-bar"></div>
+
   <div class="g4" style="margin-bottom:13px;">
-    <div class="sc"><div class="sv" style="color:var(--acc);">$12,847</div><div class="sl">Total Value</div><div class="sdx up">▲ +2.26% today</div></div>
+    <div class="sc"><div class="sv port-val-live" id="port-total" style="color:var(--acc);">$12,847</div><div class="sl">Total Value</div><div class="sdx up" id="port-chg">▲ +2.26% today</div></div>
     <div class="sc"><div class="sv" style="color:var(--acc);">+28.4%</div><div class="sl">Total Return</div><div class="sdx up">vs S&P 500 +12.1%</div></div>
     <div class="sc"><div class="sv" style="color:var(--gld);">$847</div><div class="sl">Annual Dividends</div><div class="sdx" style="color:var(--gld);">DRIP active</div></div>
-    <div class="sc"><div class="sv">83</div><div class="sl">Portfolio Health</div><div class="sdx up">↑ up from 79</div></div>
+    <div class="sc"><div class="sv" id="health-score">83</div><div class="sl">Portfolio Health</div><div class="sdx up">↑ up from 79</div></div>
+  </div>
+
+  <!-- Morning Brief -->
+  <div class="brief-card" id="morning-brief">
+    <div class="brief-head"><div class="brief-title">🤖 AI Morning Brief<span style="font-size:9px;font-weight:400;color:var(--mut);margin-left:6px;">— Agent-generated at 6:30 AM</span></div><div class="brief-ts" id="brief-ts">Today · May 28</div></div>
+    <div class="brief-body" id="brief-items"></div>
   </div>
 
   <div class="port-grid" style="margin-bottom:13px;">
@@ -153,13 +162,7 @@
     <div style="display:flex;flex-direction:column;gap:13px;">
       <div class="card">
         <div class="ch"><div><div class="ct">📰 Today's News</div><div class="cs">Stories impacting your holdings</div></div><span class="tag tb2">Live</span></div>
-        <div class="cb">
-          <div class="news-item"><div class="ni-ico">📈</div><div><div class="ni-sym">PLTR</div><div class="ni-title">Karp Buys $2.1M Open Market — Strongest Insider Signal This Year</div><div class="ni-meta">Reuters · 9:42 AM</div><div class="ni-imp up">▲ Position increased +3.2%</div></div></div>
-          <div class="news-item"><div class="ni-ico">🏦</div><div><div class="ni-sym">MACRO</div><div class="ni-title">Fed Signals 2 Rate Cuts in H2 2026 — FOMC Minutes</div><div class="ni-meta">WSJ · 2:18 PM</div><div class="ni-imp up">▲ Growth tech weight raised</div></div></div>
-          <div class="news-item"><div class="ni-ico">💰</div><div><div class="ni-sym">JNJ</div><div class="ni-title">J&J Raises Dividend 4.8% — 62nd Consecutive Year</div><div class="ni-meta">Bloomberg · 10:05 AM</div><div class="ni-imp" style="color:var(--gld);">★ DRIP queued Mar 25</div></div></div>
-          <div class="news-item"><div class="ni-ico">🤖</div><div><div class="ni-sym">NVDA</div><div class="ni-title">Blackwell GPU Demand Exceeds Supply — Third Straight Quarter</div><div class="ni-meta">The Verge · 11:30 AM</div><div class="ni-imp up">▲ Confirms AI infra thesis</div></div></div>
-          <div class="news-item"><div class="ni-ico">☁️</div><div><div class="ni-sym">MSFT</div><div class="ni-title">Azure AI Revenue Accelerates to 33% Growth in Q1</div><div class="ni-meta">CNBC · 8:15 AM</div><div class="ni-imp up">▲ Copilot adoption strong</div></div></div>
-        </div>
+        <div class="cb" id="news-feed"></div>
       </div>
       <div class="card">
         <div class="ch"><div class="ct">⚡ AI Decisions Today</div><div class="cs">Full reasoning — every call explained</div></div>
@@ -168,6 +171,11 @@
           <div class="log-e neu"><div class="log-hd"><div class="log-t">Macro rebalance: Bonds → Growth</div><div class="log-tm">2:18 PM</div></div><div class="log-b">Fed rate cut signals. Reduced bonds 15%→10%, added 5% to growth tech.</div></div>
           <div class="log-e dv"><div class="log-hd"><div class="log-t">JNJ DRIP queued $18.40</div><div class="log-tm">10:05 AM</div></div><div class="log-b">Ex-div Mar 21 · Reinvesting into <strong>more JNJ shares</strong>.</div></div>
         </div>
+      </div>
+      <!-- Agent Activity Log -->
+      <div class="card">
+        <div class="ch"><div><div class="ct">🤖 Agent Activity Log</div><div class="cs">What your AI agents did today</div></div><span class="tag tg">6 agents active</span></div>
+        <div class="cb" style="padding:9px 13px;"><div class="act-log" id="agent-log"></div></div>
       </div>
     </div>
   </div>
@@ -289,6 +297,13 @@
         </div>
       </div>
       <button class="sim-run" onclick="runSim()">🚀 Run Simulation →</button>
+    </div>
+    <!-- Simulation loader -->
+    <div id="sim-loader" class="sim-loader">
+      <div class="sim-spinner"></div>
+      <div class="sim-step" id="sim-step-txt">Initializing agents…</div>
+      <div class="sim-step-sub" id="sim-step-sub">Preparing your personalized analysis</div>
+      <div class="sim-progress"><div class="sim-progress-fill" id="sim-prog-fill"></div></div>
     </div>
     <div id="sim-right">
       <div class="proj-card" style="padding:48px 32px;text-align:center;">
@@ -450,12 +465,8 @@
   <div id="l-quiz" style="display:none;">
     <div class="card" style="max-width:540px;margin:0 auto;"><div class="ch"><div class="ct">Find Your Investor Profile</div><div class="cs">4 questions · 2 minutes</div></div><div class="cb">
       <div class="qwrap">
-        <div class="qdots" id="qdots"></div>
-        <div id="qs-1"><div class="qq">When do you plan to use this money?</div><div class="qhint">Your time horizon is the #1 factor in portfolio design.</div><div class="qopts"><div class="qopt" onclick="qa(this,1)"><div class="qkey">A</div>Less than 3 years</div><div class="qopt" onclick="qa(this,1)"><div class="qkey">B</div>3–7 years</div><div class="qopt" onclick="qa(this,1)"><div class="qkey">C</div>7–15 years</div><div class="qopt" onclick="qa(this,1)"><div class="qkey">D</div>15+ years</div></div><div class="qnav"><span class="qct">1 of 4</span><button class="btn bpri" onclick="qn(2)">Next →</button></div></div>
-        <div id="qs-2" style="display:none"><div class="qq">Portfolio drops 30% tomorrow. You:</div><div class="qhint">Be honest — this determines how much risk suits you.</div><div class="qopts"><div class="qopt" onclick="qa(this,2)"><div class="qkey">A</div>Sell everything immediately</div><div class="qopt" onclick="qa(this,2)"><div class="qkey">B</div>Lose sleep but hold on</div><div class="qopt" onclick="qa(this,2)"><div class="qkey">C</div>Stay calm — long-term thinking</div><div class="qopt" onclick="qa(this,2)"><div class="qkey">D</div>Buy more — it's a discount</div></div><div class="qnav"><button class="btn bout" onclick="qb(1)">← Back</button><span class="qct">2 of 4</span><button class="btn bpri" onclick="qn(3)">Next →</button></div></div>
-        <div id="qs-3" style="display:none"><div class="qq">Which sector excites you most?</div><div class="qhint">We'll overweight your interests while keeping you diversified.</div><div class="qopts"><div class="qopt" onclick="qa(this,3)"><div class="qkey">A</div>AI & Technology</div><div class="qopt" onclick="qa(this,3)"><div class="qkey">B</div>Healthcare & Biotech</div><div class="qopt" onclick="qa(this,3)"><div class="qkey">C</div>Dividend income — steady compounding</div><div class="qopt" onclick="qa(this,3)"><div class="qkey">D</div>Let the AI decide</div></div><div class="qnav"><button class="btn bout" onclick="qb(2)">← Back</button><span class="qct">3 of 4</span><button class="btn bpri" onclick="qn(4)">Next →</button></div></div>
-        <div id="qs-4" style="display:none"><div class="qq">What matters most to you?</div><div class="qhint">This shapes your entire portfolio strategy.</div><div class="qopts"><div class="qopt" onclick="qa(this,4)"><div class="qkey">A</div>Maximum long-term growth</div><div class="qopt" onclick="qa(this,4)"><div class="qkey">B</div>Reliable dividend income</div><div class="qopt" onclick="qa(this,4)"><div class="qkey">C</div>Balanced growth & income</div><div class="qopt" onclick="qa(this,4)"><div class="qkey">D</div>Capital preservation</div></div><div class="qnav"><button class="btn bout" onclick="qb(3)">← Back</button><span class="qct">4 of 4</span><button class="btn bpri" onclick="qshow()">See My Profile →</button></div></div>
-        <div class="qresult" id="qr"><div style="font-size:34px;margin-bottom:6px;">🎯</div><div style="font-size:10px;color:var(--mut);">Your profile</div><div class="qrn" id="qrn">Growth Seeker</div><p class="qrd" id="qrd"></p><button class="btn bpri" onclick="openLogin()">Build My Portfolio Free →</button></div>
+        <!-- Adaptive quiz rendered by JS -->
+        <div id="adaptive-quiz-wrap"></div>
       </div>
     </div></div>
   </div>

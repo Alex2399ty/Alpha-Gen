@@ -249,7 +249,47 @@ function renderPins(){document.getElementById('pinned-list').innerHTML=pinned.ma
 document.addEventListener('click',e=>{if(!e.target.closest('.ss-wr'))document.getElementById('ss-drop').classList.remove('show');});
 function fmtD(n){if(n>=1e6)return'$'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(1)+'K';return'$'+Math.round(n).toLocaleString();}
 
+const SIM_STEPS=[
+  {s:'Filtering stock universe…',sub:'Applying sector, risk & management quality filters to 45 stocks'},
+  {s:'Scoring CEO quality…',sub:'Analyzing earnings call language patterns and insider signals'},
+  {s:'Optimizing allocations…',sub:'Weighting positions by management score and risk profile'},
+  {s:'Generating AI theses…',sub:'Writing investment reasoning for each selected holding'},
+  {s:'Running 10,000 scenarios…',sub:'Projecting bull, base, and bear case returns for your parameters'},
+];
 function runSim(){
+  const loader=document.getElementById('sim-loader');
+  const right=document.getElementById('sim-right');
+  if(loader){
+    loader.classList.add('on');
+    right.style.visibility='hidden';right.style.position='absolute';
+    let step=0;
+    const stepEl=document.getElementById('sim-step-txt');
+    const subEl=document.getElementById('sim-step-sub');
+    const progEl=document.getElementById('sim-prog-fill');
+    if(stepEl)stepEl.textContent=SIM_STEPS[0].s;
+    if(subEl)subEl.textContent=SIM_STEPS[0].sub;
+    if(progEl)progEl.style.width='0%';
+    const iv=setInterval(()=>{
+      step++;
+      if(step>=SIM_STEPS.length){
+        clearInterval(iv);
+        if(progEl)progEl.style.width='100%';
+        setTimeout(()=>{
+          loader.classList.remove('on');
+          right.style.visibility='';right.style.position='';
+          _runSimCore();
+        },300);
+        return;
+      }
+      if(stepEl)stepEl.textContent=SIM_STEPS[step].s;
+      if(subEl)subEl.textContent=SIM_STEPS[step].sub;
+      if(progEl)progEl.style.width=((step+1)/SIM_STEPS.length*100)+'%';
+    },480);
+    return;
+  }
+  _runSimCore();
+}
+function _runSimCore(){
   const start=+document.getElementById('sr-start').value;
   const dca=+document.getElementById('sr-dca').value;
   const hor=+document.getElementById('sr-hor').value;
@@ -336,16 +376,11 @@ function runSim(){
     </div>
     <div class="agent-note"><div style="font-size:9px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;">🤖 Agent Integration Ready</div><p style="font-size:11px;color:var(--mut);line-height:1.7;">Every thesis above is structured to feed your learning agents. When connected, agents will update these theses in real-time from earnings calls, Form 4 insider filings, and macro events. Each position is sized to your exact investment — <strong style="color:var(--tex);">${fmtD(start)} starting + ${fmtD(dca)}/mo</strong>.</p></div>`;
   setTimeout(()=>{const n=document.getElementById('rneedle');if(n)n.style.left=`calc(${risk*10-5}% - 7px)`;},80);
-}
+} // end _runSimCore
 
 // ════════════════════════════════════════
-// LEARN TABS
+// LEARN TABS (overridden below with adaptive quiz support)
 // ════════════════════════════════════════
-function lTab(t,el){
-  document.querySelectorAll('.ltab').forEach(l=>l.classList.remove('on'));el.classList.add('on');
-  ['lessons','glossary','explainers','sleep','quiz'].forEach(id=>{const el2=document.getElementById('l-'+id);if(el2)el2.style.display='none';});
-  const target=document.getElementById('l-'+t);if(target)target.style.display='block';
-}
 function runSleep(el,yr,name,pct,recov){
   document.querySelectorAll('.slp-c').forEach(c=>c.classList.remove('on'));el.classList.add('on');
   const v=12847,lost=Math.abs(Math.round(v*pct/100)),rem=v-lost;
@@ -418,6 +453,296 @@ document.addEventListener('keydown',e=>{
     closeLogin();
   }
 });
+
+// ════════════════════════════════════════
+// LIVE PRICE SIMULATION
+// ════════════════════════════════════════
+const liveP={};
+(()=>{
+  const initP={NVDA:134.72,MSFT:420.18,AMZN:228.90,META:612.45,PLTR:92.30,AVGO:198.40,JNJ:158.20,LLY:812.40,AAPL:238.55,AMD:132.50,V:284.20,COST:942.10,NOW:1042.30,GS:512.80,TSLA:248.70,ABBV:172.10,CRWD:342.50,PANW:185.20};
+  Object.keys(initP).forEach(k=>{liveP[k]={price:initP[k],base:initP[k],change:0};});
+})();
+let portBase=12847;
+function tickPrices(){
+  let totalMov=0,ct=0;
+  document.querySelectorAll('.tki').forEach(el=>{
+    const sym=el.querySelector('.tks')?.textContent;
+    if(!liveP[sym])return;
+    const d=liveP[sym];
+    const move=(Math.random()-0.499)*0.08;
+    d.price=+(d.price*(1+move/100)).toFixed(2);
+    d.change=(d.price/d.base-1)*100;
+    totalMov+=move;ct++;
+    const pEl=el.querySelector('.tkp'),cEl=el.querySelector('.tkc');
+    if(pEl)pEl.textContent='$'+d.price.toFixed(2);
+    if(cEl){cEl.textContent=(d.change>=0?'+':'')+d.change.toFixed(2)+'%';cEl.className='tkc '+(d.change>=0?'up':'dn');}
+    el.classList.add(move>0?'flash-up':'flash-dn');
+    setTimeout(()=>el.classList.remove('flash-up','flash-dn'),700);
+  });
+  // Update holdings table prices
+  document.querySelectorAll('#h-body tr').forEach(tr=>{
+    const sym=tr.querySelector('.hsym')?.textContent;
+    if(!sym||!liveP[sym])return;
+    const cells=tr.querySelectorAll('td');
+    if(cells[2]){
+      cells[2].textContent='$'+liveP[sym].price.toFixed(2);
+      cells[2].classList.add(liveP[sym].change>=0?'flash-up':'flash-dn');
+      setTimeout(()=>cells[2].classList.remove('flash-up','flash-dn'),700);
+    }
+    if(cells[3]){
+      const c=liveP[sym].change;
+      cells[3].innerHTML=`<span class="${c>=0?'up':'dn'}">${c>=0?'+':''}${c.toFixed(2)}%</span>`;
+    }
+  });
+  // Update portfolio total
+  if(ct>0){
+    const drift=(totalMov/ct)*3.2;
+    portBase=portBase*(1+drift/10000);
+    const pv=document.getElementById('port-total');
+    const pc=document.getElementById('port-chg');
+    if(pv)pv.textContent='$'+Math.round(portBase).toLocaleString();
+    const totalChg=((portBase/12847)-1)*100;
+    if(pc)pc.textContent=(totalChg>=0?'▲ +':'▼ ')+Math.abs(totalChg).toFixed(2)+'% today';
+    if(pc)pc.className='sdx '+(totalChg>=0?'up':'dn');
+  }
+}
+setInterval(tickPrices,3500);
+
+// ════════════════════════════════════════
+// AGENT BAR & LOG
+// ════════════════════════════════════════
+function renderAgents(){
+  const bar=document.getElementById('agent-bar');
+  if(!bar||typeof AGENTS_DEF==='undefined')return;
+  bar.innerHTML=AGENTS_DEF.map(a=>`
+    <div class="agent-chip ${a.status==='proc'?'proc':''}" title="${a.desc}">
+      <div class="agent-dot"></div>
+      <div class="agent-label">
+        <div class="agent-name">${a.icon} ${a.name}</div>
+        <div class="agent-time">${a.time}</div>
+      </div>
+    </div>`).join('');
+}
+function renderAgentLog(){
+  const log=document.getElementById('agent-log');
+  if(!log||typeof AGENT_LOG==='undefined')return;
+  log.innerHTML=AGENT_LOG.map(e=>`
+    <div class="act-entry">
+      <span class="act-ico">${e.ico}</span>
+      <div class="act-body"><span class="act-sym">${e.sym}</span>${e.body}</div>
+      <span class="act-time">${e.time}</span>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════
+// MORNING BRIEF
+// ════════════════════════════════════════
+function renderMorningBrief(){
+  const el=document.getElementById('brief-items');
+  if(!el)return;
+  const portfolio=['NVDA','MSFT','AMZN','META','PLTR','AVGO','JNJ'];
+  const sigMap={strong:{label:'⚡ Strong Hold',color:'var(--acc)',bg:'var(--adim)'},hold:{label:'✓ Hold',color:'var(--acc)',bg:'var(--adim)'},watch:{label:'⚠ Watch',color:'var(--gld)',bg:'var(--gdim)'},swap:{label:'↕ Review',color:'var(--red)',bg:'var(--rdim)'}};
+  el.innerHTML=portfolio.map(sym=>{
+    const d=DB.find(s=>s.s===sym);if(!d)return'';
+    const sig=sigMap[d.signalType]||sigMap.hold;
+    const shortReason=d.reason.length>80?d.reason.substring(0,80)+'…':d.reason;
+    return`<div class="brief-row">
+      <span class="brief-sym">${sym}</span>
+      <span class="brief-sig" style="color:${sig.color};background:${sig.bg};">${sig.label}</span>
+      <span style="flex:1;">${shortReason}</span>
+    </div>`;
+  }).join('');
+  // Update timestamp
+  const ts=document.getElementById('brief-ts');
+  const now=new Date();
+  if(ts)ts.textContent=now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+// ════════════════════════════════════════
+// DYNAMIC NEWS FEED
+// ════════════════════════════════════════
+let newsIdx=0;
+function renderNewsFeed(){
+  const feed=document.getElementById('news-feed');
+  if(!feed||typeof NEWS_POOL==='undefined')return;
+  // Show 5 most recent items, rotating
+  const items=[];
+  for(let i=0;i<5;i++)items.push(NEWS_POOL[(newsIdx+i)%NEWS_POOL.length]);
+  const tagColor={up:'var(--acc)',div:'var(--gld)',neu:'var(--mut)',warn:'var(--red)'};
+  feed.innerHTML=items.map((n,i)=>`
+    <div class="news-item">
+      <div class="ni-ico">${n.ico}</div>
+      <div style="flex:1;">
+        <div class="ni-sym">${n.sym}</div>
+        <div class="ni-title">${n.title}</div>
+        <div class="ni-meta">${n.src} · ${n.time}</div>
+        <div class="ni-imp ${n.tag==='up'?'up':''}" style="${n.tag==='div'?'color:var(--gld)':n.tag==='warn'?'color:var(--red)':''}">${n.imp}</div>
+        <span class="ni-expand" onclick="toggleAI(this)">🤖 AI Analysis ↓</span>
+        <div class="ni-ai">${n.ai}</div>
+      </div>
+    </div>`).join('');
+}
+function toggleAI(el){
+  const ai=el.nextElementSibling;
+  if(!ai)return;
+  ai.classList.toggle('show');
+  el.textContent=ai.classList.contains('show')?'🤖 AI Analysis ↑':'🤖 AI Analysis ↓';
+}
+// Rotate news every 45 seconds
+setInterval(()=>{newsIdx=(newsIdx+1)%NEWS_POOL.length;renderNewsFeed();},45000);
+
+// ════════════════════════════════════════
+// ADAPTIVE QUIZ (20-question pool)
+// ════════════════════════════════════════
+let aqStep=0,aqAnswers={},aqQueue=[];
+const AQ_PROFILE_LABELS={horizon:'Time Horizon',risk:'Risk Profile',sector:'Sector Focus',goal:'Primary Goal',experience:'Experience',dca:'DCA Budget',concentration:'Portfolio Style',signals:'Signal Preference',discipline:'Discipline',macro:'Macro Awareness',leverage:'Leverage',dividend:'Dividend Pref',intl:'International',esg:'ESG',engagement:'Engagement',autonomy:'AI Autonomy',psychology:'Psychology'};
+
+function initAdaptiveQuiz(){
+  if(typeof QUIZ_POOL==='undefined')return;
+  aqStep=0;aqAnswers={};
+  // Start with first 4 core questions, unlock more based on answers
+  aqQueue=QUIZ_POOL.slice(0,4).map(q=>q.id);
+  renderAQ();
+}
+function renderAQ(){
+  const wrap=document.getElementById('adaptive-quiz-wrap');
+  if(!wrap)return;
+  const qId=aqQueue[aqStep];
+  const q=QUIZ_POOL.find(x=>x.id===qId);
+  if(!q){renderAQResult();return;}
+  const answered=Object.keys(aqAnswers);
+  const profileTags=answered.map(id=>{
+    const qd=QUIZ_POOL.find(x=>x.id===id);
+    if(!qd)return'';
+    const ans=aqAnswers[id];
+    const opt=qd.opts.find(o=>o.k===ans);
+    return`<span class="qp-tag">${opt?opt.t.substring(0,18):ans}</span>`;
+  }).join('');
+  const pct=Math.round((aqStep/(aqQueue.length||4))*100);
+  wrap.innerHTML=`
+    <div class="qwrap">
+      ${answered.length>0?`<div class="quiz-profile-bar">${profileTags}</div>`:''}
+      <div class="quiz-count"><span>Question ${aqStep+1} of ${aqQueue.length}+</span><span style="color:var(--acc);">${answered.length} answered · Profile ${pct}% complete</span></div>
+      <div class="qdots" id="aq-dots">${aqQueue.map((_,i)=>`<div class="qd ${i<aqStep?'done':i===aqStep?'now':''}"></div>`).join('')}</div>
+      <div class="qq">${q.q}</div>
+      <div class="qhint">${q.hint}</div>
+      <div class="qopts">${q.opts.map(o=>`
+        <div class="qopt ${aqAnswers[q.id]===o.k?'on':''}" onclick="aqPick('${q.id}','${o.k}',this)">
+          <div class="qkey">${o.k}</div>${o.t}
+        </div>`).join('')}</div>
+      <div class="qnav">
+        ${aqStep>0?`<button class="btn bout" onclick="aqBack()">← Back</button>`:'<span></span>'}
+        <span class="qct">${aqStep+1} / ${aqQueue.length}+</span>
+        <button class="btn bpri" onclick="aqNext()">${aqStep===aqQueue.length-1?'See My Profile →':'Next →'}</button>
+      </div>
+      ${aqQueue.length<QUIZ_POOL.length&&aqStep===aqQueue.length-1?`<button class="quiz-more-btn" onclick="aqAddMore()">+ More questions — refine my profile further</button>`:''}
+    </div>`;
+}
+function aqPick(qId,key,el){
+  aqAnswers[qId]=key;
+  document.querySelectorAll('.qopt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  // Unlock relevant follow-up questions
+  aqUnlock(qId,key);
+}
+function aqUnlock(qId,key){
+  const allIds=QUIZ_POOL.map(q=>q.id);
+  const inQueue=new Set(aqQueue);
+  // Adaptive rules
+  if(qId==='goal'&&key==='B'&&!inQueue.has('dividend_use'))aqQueue.push('dividend_use');
+  if(qId==='goal'&&(key==='A'||key==='C')&&!inQueue.has('concentration'))aqQueue.push('concentration');
+  if(qId==='crash'&&key==='A'&&!inQueue.has('sleep_number'))aqQueue.push('sleep_number');
+  if(qId==='crash'&&key==='D'&&!inQueue.has('leverage'))aqQueue.push('leverage');
+  if(qId==='experience'&&(key==='C'||key==='D')&&!inQueue.has('insider'))aqQueue.push('insider');
+  if(qId==='sector'&&key==='A'&&!inQueue.has('international'))aqQueue.push('international');
+  if(qId==='horizon'&&(key==='C'||key==='D')&&!inQueue.has('dca'))aqQueue.push('dca');
+}
+function aqNext(){
+  const qId=aqQueue[aqStep];
+  if(!aqAnswers[qId]){
+    const qd=QUIZ_POOL.find(x=>x.id===qId);
+    if(qd&&qd.opts[0])aqPick(qId,qd.opts[0].k,document.querySelector('.qopt'));
+  }
+  if(aqStep>=aqQueue.length-1){renderAQResult();return;}
+  aqStep++;renderAQ();
+}
+function aqBack(){if(aqStep>0){aqStep--;renderAQ();}}
+function aqAddMore(){
+  const inQueue=new Set(aqQueue);
+  const remaining=QUIZ_POOL.filter(q=>!inQueue.has(q.id));
+  if(remaining.length>0){aqQueue.push(...remaining.slice(0,3).map(q=>q.id));}
+  renderAQ();
+}
+function renderAQResult(){
+  const wrap=document.getElementById('adaptive-quiz-wrap');
+  if(!wrap)return;
+  // Build profile from answers
+  const a=aqAnswers;
+  let name='Growth Seeker',desc='';
+  const goalA=a.goal||'A',crashA=a.crash||'C',horizA=a.horizon||'C';
+  if(goalA==='B'){name='Steady Climber';desc='Your priority is income. AlphaGen builds a portfolio of Dividend Kings, high-yield ETFs, and REITs with automatic DRIP.';}
+  else if(goalA==='D'){name='Capital Guardian';desc='Capital preservation first. AlphaGen keeps you in quality dividend payers, bonds, and defensive sectors.';}
+  else if(crashA==='D'&&horizA==='D'){name='Alpha Hunter';desc='High conviction, long horizon. AlphaGen builds a concentrated growth portfolio with optional leveraged exposure for maximum compounding.';}
+  else if(crashA==='A'||crashA==='B'){name='Steady Climber';desc='Stability matters. AlphaGen diversifies with quality dividend payers and defensive positions — building wealth with less volatility.';}
+  else{name='Growth Seeker';desc="Balanced — growth-focused but not reckless. Quality growth portfolio with dividend growers mixed in, and a DCA strategy that turns every dip into a buying opportunity.";}
+  // Build DNA breakdown
+  const dnaItems=[
+    {label:'Risk Tolerance',val:a.crash==='D'?'Aggressive':a.crash==='C'?'Moderate':a.crash==='B'?'Conservative':'Cautious'},
+    {label:'Time Horizon',val:a.horizon==='D'?'15+ Years':a.horizon==='C'?'7–15 Years':a.horizon==='B'?'3–7 Years':'Short-term'},
+    {label:'Dividend Pref',val:a.dividend_use==='A'||a.goal==='B'?'DRIP Reinvest':a.goal==='A'?'Growth Focus':'Balanced'},
+    {label:'Style',val:a.concentration==='A'?'Concentrated':a.concentration==='D'?'Index-Like':'Diversified'},
+    {label:'AI Autonomy',val:a.ai_trust==='A'?'Full Auto':a.ai_trust==='B'?'AI Leads':'Manual'},
+    {label:'Engagement',val:a.news_habit==='A'?'Daily Active':a.news_habit==='D'?'Passive':'Weekly'},
+  ].filter(d=>d.val);
+  wrap.innerHTML=`
+    <div class="qwrap">
+      <div style="text-align:center;padding:6px 0 14px;">
+        <div style="font-size:36px;margin-bottom:6px;">🎯</div>
+        <div style="font-size:10px;color:var(--mut);">Your investor profile</div>
+        <div class="qrn" style="font-family:var(--F);font-size:30px;font-weight:800;letter-spacing:-1.5px;color:var(--acc);margin:6px 0 5px;">${name}</div>
+        <p style="font-size:11px;color:var(--mut);line-height:1.7;max-width:380px;margin:0 auto;">${desc}</p>
+      </div>
+      <div class="quiz-dna">${dnaItems.map(d=>`<div class="dna-item"><div class="dna-label">${d.label}</div><div class="dna-val">${d.val}</div></div>`).join('')}</div>
+      <div style="font-size:10px;color:var(--mut);text-align:center;margin-bottom:12px;">Based on ${Object.keys(aqAnswers).length} of ${QUIZ_POOL.length} available questions</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn bpri" style="flex:1;" onclick="openLogin()">Build My Portfolio →</button>
+        <button class="btn bout" onclick="initAdaptiveQuiz()">Retake Quiz</button>
+        ${Object.keys(aqAnswers).length<QUIZ_POOL.length?`<button class="btn bout" onclick="aqContinue()">More Questions</button>`:''}
+      </div>
+    </div>`;
+}
+function aqContinue(){
+  // Add remaining questions and continue
+  const inQueue=new Set(aqQueue);
+  const remaining=QUIZ_POOL.filter(q=>!inQueue.has(q.id));
+  aqQueue.push(...remaining.map(q=>q.id));
+  aqStep=Object.keys(aqAnswers).length;
+  renderAQ();
+}
+
+// Override old quiz tab to use new one
+function lTab(t,el){
+  document.querySelectorAll('.ltab').forEach(l=>l.classList.remove('on'));el.classList.add('on');
+  ['lessons','glossary','explainers','sleep','quiz'].forEach(id=>{const el2=document.getElementById('l-'+id);if(el2)el2.style.display='none';});
+  const target=document.getElementById('l-'+t);if(target)target.style.display='block';
+  if(t==='quiz')initAdaptiveQuiz();
+}
+
+// ════════════════════════════════════════
+// INIT ALL NEW FEATURES
+// ════════════════════════════════════════
+(()=>{
+  renderAgents();
+  renderAgentLog();
+  renderMorningBrief();
+  renderNewsFeed();
+  // Init quiz when quiz tab is opened
+  const quizTab=document.querySelector('.ltab[onclick*="quiz"]');
+  if(quizTab){
+    const wrap=document.getElementById('adaptive-quiz-wrap');
+    if(wrap&&wrap.innerHTML==='')initAdaptiveQuiz();
+  }
+})();
 
 // Init slider display values
 svUp();
