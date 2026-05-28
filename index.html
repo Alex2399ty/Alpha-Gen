@@ -19,7 +19,8 @@
   <nav class="sb-nav">
     <div class="nl">Investing</div>
     <div class="ni on" onclick="nav('portfolio',this);closeSidebar()"><span class="ico">📊</span>Portfolio<span class="nbadge bg">+2.26%</span></div>
-    <div class="ni" onclick="nav('simulation',this);closeSidebar()"><span class="ico">🧪</span>Simulation Lab<span class="nbadge bb">NEW</span></div>
+    <div class="ni" onclick="nav('stocks',this);closeSidebar();renderStockGrid(currentStockFilter||'all')"><span class="ico">🔎</span>Stocks<span class="nbadge bb">45</span></div>
+    <div class="ni" onclick="nav('simulation',this);closeSidebar()"><span class="ico">🧪</span>Simulation Lab</div>
     <div class="ni" onclick="nav('dividends',this);closeSidebar()"><span class="ico">💰</span>Dividends</div>
     <div class="ni" onclick="nav('watchlist',this);closeSidebar()"><span class="ico">👁</span>Watchlist<span class="nbadge br">3</span></div>
     <div class="nl">Insights</div>
@@ -100,11 +101,105 @@
     <div class="tb-r">
       <div class="chip"><span class="live"></span>Markets Open</div>
       <div class="chip" onclick="openCheckin()">🔄 Weekly Check-In</div>
-      <div class="chip" onclick="openLogin()">🔗 Connect Brokerage</div>
+      <div class="chip" onclick="openBrokerModal()">🔗 Connect Brokerage</div>
       <button class="btn bpri" style="font-size:11px;padding:6px 12px;" onclick="openLogin()">+ Add Funds</button>
     </div>
   </div>
   <div class="content">
+
+<!-- ══ STOCKS ══ -->
+<div class="pg" id="pg-stocks">
+  <div class="ph"><div class="pe">// Stocks</div><h1 class="pt">Stock <em>Research Lab</em></h1><p class="ps">Buy, hold, and sell signals on 45+ stocks with AI reasoning, CEO scoring, and projected returns.</p></div>
+  <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+    <input class="fi" id="stk-search" placeholder="Search NVDA, AAPL, TSLA, COST…" oninput="filterStockGrid(this.value)" style="flex:1;min-width:200px;"/>
+    <div class="live-price-badge" id="price-badge"><span class="live"></span><span id="price-status">Fetching live prices…</span></div>
+  </div>
+  <div class="stk-tabs" id="stk-tabs">
+    <div class="stk-tab on" onclick="filterByTab('all',this)">All</div>
+    <div class="stk-tab" onclick="filterByTab('Technology',this)">AI / Tech</div>
+    <div class="stk-tab" onclick="filterByTab('AI / Data',this)">AI Data</div>
+    <div class="stk-tab" onclick="filterByTab('Healthcare',this)">Healthcare</div>
+    <div class="stk-tab" onclick="filterByTab('Financials',this)">Financials</div>
+    <div class="stk-tab" onclick="filterByTab('Consumer',this)">Consumer</div>
+    <div class="stk-tab" onclick="filterByTab('dividend',this)">Dividend</div>
+    <div class="stk-tab" onclick="filterByTab('Energy',this)">Energy</div>
+  </div>
+  <div class="stk-grid" id="stk-grid"></div>
+</div>
+
+<!-- Stock Detail Side Panel -->
+<div class="stk-overlay" id="stk-overlay" onclick="closeStockPanel()"></div>
+<div class="stk-panel" id="stk-panel">
+  <div class="sp-head">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:9px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;" id="sp-sector">Technology</div>
+        <div class="sp-sym" id="sp-sym">NVDA</div>
+        <div class="sp-name" id="sp-name">Nvidia Corp · Large Cap</div>
+      </div>
+      <button class="mclose" onclick="closeStockPanel()">×</button>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:10px;margin-top:10px;">
+      <div class="sp-price" id="sp-price">$134.72</div>
+      <div class="sp-chg" id="sp-chg">+3.41%</div>
+      <div class="live-price-badge" style="margin-left:auto;"><span class="live"></span>Live</div>
+    </div>
+  </div>
+  <div class="sp-body">
+    <div class="sp-tabs" id="sp-tabs">
+      <div class="sp-tab on" onclick="spTab('overview',this)">Overview</div>
+      <div class="sp-tab" onclick="spTab('thesis',this)">Thesis</div>
+      <div class="sp-tab" onclick="spTab('agent',this)">Agent</div>
+      <div class="sp-tab" onclick="spTab('risks',this)">Risks</div>
+    </div>
+    <div id="sp-content"></div>
+  </div>
+</div>
+
+<!-- ══ BROKERAGE MODAL ══ -->
+<div class="broker-modal" id="broker-modal" onclick="if(event.target===this)closeBrokerModal()">
+  <div class="broker-box">
+    <div class="broker-head">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-family:var(--F);font-size:16px;font-weight:800;">Connect Your Brokerage</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:3px;">Powered by SnapTrade OAuth — your credentials never touch AlphaGen servers</div>
+        </div>
+        <button class="mclose" onclick="closeBrokerModal()">×</button>
+      </div>
+    </div>
+    <div class="broker-grid">
+      <div class="broker-card" onclick="selectBroker('robinhood')">
+        <div class="broker-icon">🟢</div>
+        <div class="broker-name">Robinhood</div>
+        <div class="broker-desc">Commission-free trading</div>
+        <div class="broker-tag tg">BETA</div>
+      </div>
+      <div class="broker-card" onclick="selectBroker('webull')">
+        <div class="broker-icon">🔵</div>
+        <div class="broker-name">Webull</div>
+        <div class="broker-desc">Advanced trading platform</div>
+        <div class="broker-tag tg">BETA</div>
+      </div>
+      <div class="broker-card soon">
+        <div class="broker-icon">🟡</div>
+        <div class="broker-name">Fidelity</div>
+        <div class="broker-desc">Full-service brokerage</div>
+        <div class="broker-tag" style="background:var(--sur);color:var(--mut);">COMING SOON</div>
+      </div>
+      <div class="broker-card soon">
+        <div class="broker-icon">🟠</div>
+        <div class="broker-name">Schwab</div>
+        <div class="broker-desc">TD Ameritrade & Schwab</div>
+        <div class="broker-tag" style="background:var(--sur);color:var(--mut);">COMING SOON</div>
+      </div>
+    </div>
+    <div style="padding:0 22px 20px;font-size:10px;color:var(--mut);line-height:1.7;text-align:center;">
+      AlphaGen uses SnapTrade's bank-grade OAuth. We see your positions — never your login credentials.<br>
+      <span style="color:var(--acc);cursor:pointer;">Learn how SnapTrade works →</span>
+    </div>
+  </div>
+</div>
 
 <!-- ══ PORTFOLIO ══ -->
 <div class="pg on" id="pg-portfolio">

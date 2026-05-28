@@ -437,6 +437,300 @@ document.addEventListener('keydown',e=>{
 });
 
 // ════════════════════════════════════════
+// PAGE META — add stocks page
+// ════════════════════════════════════════
+PM.stocks={t:'Stocks',s:'Research 45+ stocks — AI buy/hold/sell signals with price targets'};
+
+// ════════════════════════════════════════
+// LIVE PRICES — Yahoo Finance via CORS proxy
+// ════════════════════════════════════════
+const LIVE_PRICES={};
+const ALL_SYMS=DB.map(s=>s.s).concat(['NFLX','SPOT','UBER','HD','SBUX','BRKB','LMT','CAT','DE','GOOGL','AAPL']);
+
+async function fetchLivePrices(){
+  const syms=ALL_SYMS.join(',');
+  const yf=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms}&fields=regularMarketPrice,regularMarketChangePercent,regularMarketPreviousClose,fiftyTwoWeekHigh,fiftyTwoWeekLow,marketCap,trailingPE`;
+  const badge=document.getElementById('price-status');
+  try{
+    // Try direct first, then proxy
+    let resp=null;
+    try{resp=await fetch(yf,{signal:AbortSignal.timeout(4000)});}catch{}
+    if(!resp||!resp.ok){
+      resp=await fetch('https://corsproxy.io/?'+encodeURIComponent(yf),{signal:AbortSignal.timeout(8000)});
+    }
+    const json=await resp.json();
+    const quotes=json?.quoteResponse?.result||[];
+    quotes.forEach(q=>{
+      LIVE_PRICES[q.symbol]={
+        price:q.regularMarketPrice,
+        change:q.regularMarketChangePercent,
+        prev:q.regularMarketPreviousClose,
+        high52:q.fiftyTwoWeekHigh,
+        low52:q.fiftyTwoWeekLow,
+        mcap:q.marketCap,
+        pe:q.trailingPE,
+      };
+      // Sync into liveP for the ticker
+      if(liveP[q.symbol]){
+        liveP[q.symbol].price=q.regularMarketPrice;
+        liveP[q.symbol].base=q.regularMarketPreviousClose||q.regularMarketPrice;
+        liveP[q.symbol].change=q.regularMarketChangePercent;
+      }
+    });
+    if(badge)badge.textContent='Live · Updated '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    // Refresh the stock grid if on stocks page
+    if(document.getElementById('pg-stocks')?.classList.contains('on'))renderStockGrid(currentStockFilter);
+    // Update ticker
+    updateTickerFromLive();
+  }catch(e){
+    if(badge)badge.textContent='Simulated (live fetch failed)';
+    console.log('Live price fetch failed, using simulation');
+  }
+}
+
+function updateTickerFromLive(){
+  document.querySelectorAll('.tki').forEach(el=>{
+    const sym=el.querySelector('.tks')?.textContent;
+    const d=LIVE_PRICES[sym];if(!d)return;
+    const pEl=el.querySelector('.tkp'),cEl=el.querySelector('.tkc');
+    if(pEl)pEl.textContent='$'+d.price.toFixed(2);
+    if(cEl){
+      cEl.textContent=(d.change>=0?'+':'')+d.change.toFixed(2)+'%';
+      cEl.className='tkc '+(d.change>=0?'up':'dn');
+    }
+  });
+}
+
+function getLivePrice(sym){
+  return LIVE_PRICES[sym]?.price||liveP[sym]?.price||100;
+}
+function getLiveChange(sym){
+  return LIVE_PRICES[sym]?.change??liveP[sym]?.change??0;
+}
+
+// Fetch on load and every 30 seconds
+fetchLivePrices();
+setInterval(fetchLivePrices,30000);
+
+// ════════════════════════════════════════
+// PRICE TARGETS
+// ════════════════════════════════════════
+const SECTOR_RETURNS={'Technology':0.155,'AI / Data':0.20,'Healthcare':0.115,'Financials':0.10,'Consumer':0.085,'Energy':0.078,'Industrials':0.088,'Real Estate':0.072,'Utilities':0.062,'Materials':0.075};
+function getPriceTargets(sym){
+  const d=DB.find(s=>s.s===sym);
+  if(!d)return{yr1:{price:'-',ret:'-'},yr5:{price:'-',ret:'-'},yr10:{price:'-',ret:'-'}};
+  const price=getLivePrice(sym);
+  const quality=d.mgmt/10;
+  const baseAnnual=(SECTOR_RETURNS[d.sec]||0.10)*quality*(1-d.risk*0.02);
+  const yr1=price*(1+baseAnnual*0.92);
+  const yr5=price*Math.pow(1+baseAnnual*0.88,5);
+  const yr10=price*Math.pow(1+baseAnnual*0.82,10);
+  const pct=(v,base)=>(v>=base?'+':'')+((v/base-1)*100).toFixed(0)+'%';
+  const fmt=v=>v>=1000?'$'+Math.round(v).toLocaleString():'$'+v.toFixed(0);
+  return{
+    yr1:{price:fmt(yr1),ret:pct(yr1,price),raw:yr1},
+    yr5:{price:fmt(yr5),ret:pct(yr5,price),raw:yr5},
+    yr10:{price:fmt(yr10),ret:pct(yr10,price),raw:yr10},
+  };
+}
+
+// ════════════════════════════════════════
+// STOCK-SPECIFIC AGENT LOG
+// ════════════════════════════════════════
+function getStockAgentLog(sym){
+  const d=DB.find(s=>s.s===sym);if(!d)return[];
+  const newsCount=NEWS_POOL.filter(n=>n.sym===sym).length;
+  const insiderNews=AGENT_LOG.find(e=>e.sym===sym);
+  const logs=[
+    {ico:'🔍',body:`Signal confirmed: <strong>${{strong:'STRONG HOLD',hold:'HOLD',watch:'WATCH',swap:'CONSIDER SWAP'}[d.signalType]||'HOLD'}</strong> — AI confidence ${d.confidence}%`,time:'6:30 AM'},
+    {ico:'🧠',body:`CEO quality score: <strong>${d.mgmt}/10</strong> — re-evaluated from latest earnings call language analysis`,time:'6:15 AM'},
+    {ico:'📰',body:`News scan complete: <strong>${newsCount>0?newsCount+' relevant stories':'No major stories'}</strong> found matching ${sym} this session`,time:'5:50 AM'},
+  ];
+  if(insiderNews)logs.unshift({ico:'🔍',body:insiderNews.body,time:'9:15 AM'});
+  if(d.swapSuggestion)logs.push({ico:'↕',body:`Swap candidate flagged: consider <strong>${d.swapSuggestion.sym}</strong> — ${d.swapSuggestion.reason.substring(0,80)}…`,time:'Yesterday'});
+  logs.push({ico:'❤️',body:`Risk score: <strong>${d.risk}/10</strong> — ${d.risk<=3?'conservative, low drawdown risk':d.risk<=6?'moderate volatility expected':'high volatility — ensure position sizing is correct'}`,time:'Yesterday'});
+  return logs;
+}
+
+// ════════════════════════════════════════
+// STOCKS PAGE
+// ════════════════════════════════════════
+let currentStockFilter='all';
+let currentStockSym=null;
+let currentSpTab='overview';
+
+function renderStockGrid(filter='all',query=''){
+  currentStockFilter=filter;
+  const grid=document.getElementById('stk-grid');if(!grid)return;
+  let stocks=[...DB,...SDB.filter(s=>!DB.find(d=>d.s===s.s))];
+  if(filter==='dividend')stocks=stocks.filter(s=>(s.div||0)>0.5);
+  else if(filter!=='all')stocks=stocks.filter(s=>s.sec===filter);
+  if(query)stocks=stocks.filter(s=>s.s.includes(query.toUpperCase())||s.n.toLowerCase().includes(query.toLowerCase()));
+  const sigStyle={strong:'background:var(--acc);color:var(--bg)',hold:'background:var(--adim);color:var(--acc)',watch:'background:var(--gdim);color:var(--gld)',swap:'background:var(--rdim);color:var(--red)'};
+  const sigLabel={strong:'⚡ STRONG HOLD',hold:'✓ HOLD',watch:'⚠ WATCH',swap:'↕ REVIEW'};
+  grid.innerHTML=stocks.map(s=>{
+    const price=getLivePrice(s.s);
+    const change=getLiveChange(s.s);
+    const st=s.signalType||'hold';
+    return`<div class="stk-card" onclick="openStockDetail('${s.s}')">
+      <div class="stk-sym">${s.s}</div>
+      <div class="stk-name">${s.n}</div>
+      <div class="stk-price ${change>=0?'up':'dn'}">\$${price>=1000?price.toFixed(0):price.toFixed(2)}</div>
+      <div class="stk-chg ${change>=0?'up':'dn'}">${change>=0?'▲ +':'▼ '}${Math.abs(change).toFixed(2)}%</div>
+      <div class="stk-footer">
+        <span class="stk-sig" style="${sigStyle[st]||sigStyle.hold}">${sigLabel[st]||'HOLD'}</span>
+        <span class="stk-meta">CEO ${s.mgmt||7}/10</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterByTab(tab,el){
+  document.querySelectorAll('.stk-tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  renderStockGrid(tab,document.getElementById('stk-search')?.value||'');
+}
+
+function filterStockGrid(q){
+  renderStockGrid(currentStockFilter,q);
+}
+
+// ════════════════════════════════════════
+// STOCK DETAIL PANEL
+// ════════════════════════════════════════
+function openStockDetail(sym){
+  currentStockSym=sym;currentSpTab='overview';
+  const d=DB.find(s=>s.s===sym);if(!d)return;
+  const price=getLivePrice(sym);
+  const change=getLiveChange(sym);
+  document.getElementById('sp-sym').textContent=sym;
+  document.getElementById('sp-name').textContent=d.n+' · '+(d.cap||'Large')+' Cap';
+  document.getElementById('sp-sector').textContent=d.sec;
+  document.getElementById('sp-price').textContent='$'+(price>=1000?price.toFixed(0):price.toFixed(2));
+  const chgEl=document.getElementById('sp-chg');
+  chgEl.textContent=(change>=0?'▲ +':'▼ ')+Math.abs(change).toFixed(2)+'% today';
+  chgEl.className='sp-chg '+(change>=0?'up':'dn');
+  // Reset tabs
+  document.querySelectorAll('.sp-tab').forEach(t=>t.classList.toggle('on',t.textContent.trim()==='Overview'));
+  renderSpContent('overview');
+  document.getElementById('stk-panel').classList.add('open');
+  document.getElementById('stk-overlay').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+
+function closeStockPanel(){
+  document.getElementById('stk-panel').classList.remove('open');
+  document.getElementById('stk-overlay').classList.remove('on');
+  document.body.style.overflow='';
+}
+
+function spTab(tab,el){
+  document.querySelectorAll('.sp-tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  currentSpTab=tab;
+  renderSpContent(tab);
+}
+
+function renderSpContent(tab){
+  const sym=currentStockSym;
+  const d=DB.find(s=>s.s===sym);
+  if(!d)return;
+  const el=document.getElementById('sp-content');if(!el)return;
+  const price=getLivePrice(sym);
+  const change=getLiveChange(sym);
+  const targets=getPriceTargets(sym);
+  const ld=LIVE_PRICES[sym];
+  const sigStyle={strong:'background:var(--acc);color:var(--bg)',hold:'background:var(--adim);color:var(--acc)',watch:'background:var(--gdim);color:var(--gld)',swap:'background:var(--rdim);color:var(--red)'};
+  const sigLabel={strong:'⚡ STRONG HOLD',hold:'✓ HOLD',watch:'⚠ WATCH',swap:'↕ CONSIDER SWAP'};
+
+  if(tab==='overview'){
+    const pe=ld?.pe?`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(28,35,51,.4)"><span style="font-size:10px;color:var(--mut)">P/E Ratio</span><span style="font-family:var(--F);font-size:10px;font-weight:700">${ld.pe.toFixed(1)}x</span></div>`:'';
+    const high52=ld?.high52?`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(28,35,51,.4)"><span style="font-size:10px;color:var(--mut)">52-Week High</span><span style="font-family:var(--F);font-size:10px;font-weight:700">$${ld.high52.toFixed(2)}</span></div>`:'';
+    const low52=ld?.low52?`<div style="display:flex;justify-content:space-between;padding:5px 0"><span style="font-size:10px;color:var(--mut)">52-Week Low</span><span style="font-family:var(--F);font-size:10px;font-weight:700">$${ld.low52.toFixed(2)}</span></div>`:'';
+    el.innerHTML=`
+      <div class="sig-block">
+        <span class="sig-block-badge" style="${sigStyle[d.signalType]||sigStyle.hold}">${sigLabel[d.signalType]||'HOLD'}</span>
+        <div class="sig-block-right">
+          <div class="sig-conf-row"><span>AI Confidence</span><strong>${d.confidence||80}%</strong></div>
+          <div class="sig-conf-bar"><div class="sig-conf-fill" style="width:${d.confidence||80}%;background:${d.confidence>=85?'var(--acc)':d.confidence>=65?'var(--gld)':'var(--red)'};"></div></div>
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--mut);letter-spacing:.09em;text-transform:uppercase;margin-bottom:7px;">Price Targets</div>
+      <div class="target-grid">
+        <div class="tgt-card"><div class="tgt-period">1 Year</div><div class="tgt-price">${targets.yr1.price}</div><div class="tgt-ret up">${targets.yr1.ret}</div></div>
+        <div class="tgt-card"><div class="tgt-period">5 Years</div><div class="tgt-price">${targets.yr5.price}</div><div class="tgt-ret up">${targets.yr5.ret}</div></div>
+        <div class="tgt-card"><div class="tgt-period">10 Years</div><div class="tgt-price">${targets.yr10.price}</div><div class="tgt-ret up">${targets.yr10.ret}</div></div>
+      </div>
+      <div style="font-size:9px;color:var(--mut);letter-spacing:.09em;text-transform:uppercase;margin-bottom:7px;">Key Metrics</div>
+      <div style="background:var(--card);border-radius:var(--rs);padding:9px 12px;">
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(28,35,51,.4)"><span style="font-size:10px;color:var(--mut)">CEO Score</span><span style="font-family:var(--F);font-size:10px;font-weight:700;color:var(--acc)">${d.mgmt}/10</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(28,35,51,.4)"><span style="font-size:10px;color:var(--mut)">Risk Score</span><span style="font-family:var(--F);font-size:10px;font-weight:700;color:${d.risk>=8?'var(--red)':d.risk>=5?'var(--gld)':'var(--acc)'}">${d.risk}/10</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(28,35,51,.4)"><span style="font-size:10px;color:var(--mut)">Dividend Yield</span><span style="font-family:var(--F);font-size:10px;font-weight:700;color:var(--gld)">${(d.div||0)>0?d.div+'%':'None'}</span></div>
+        ${pe}${high52}${low52}
+        <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="font-size:10px;color:var(--mut)">Sector</span><span style="font-family:var(--F);font-size:10px;font-weight:700">${d.sec}</span></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button class="btn bpri" style="flex:1;" onclick="openWhy('${sym}')">Full AI Thesis 💡</button>
+        <button class="btn bout" onclick="openBrokerModal()">Trade via Brokerage →</button>
+      </div>`;
+  }else if(tab==='thesis'){
+    el.innerHTML=`
+      <div style="font-size:9px;color:var(--mut);letter-spacing:.09em;text-transform:uppercase;margin-bottom:7px;">Investment Thesis</div>
+      <div style="font-size:11px;color:var(--tex);line-height:1.75;margin-bottom:13px;">${d.thesis||'Thesis loading…'}</div>
+      <div style="font-size:9px;color:var(--mut);letter-spacing:.09em;text-transform:uppercase;margin-bottom:7px;">Why It Fits Your Portfolio</div>
+      <div style="font-size:11px;color:var(--tex);line-height:1.75;margin-bottom:13px;">${d.whyfit||''}</div>
+      <div class="mmgrid">${(d.metrics||[]).map(m=>`<div style="background:var(--sur);border-radius:var(--rs);padding:9px;text-align:center;"><div style="font-family:var(--F);font-size:15px;font-weight:800;color:var(--acc);">${m.v}</div><div style="font-size:8px;color:var(--mut);margin-top:1px;text-transform:uppercase;letter-spacing:.05em;">${m.l}</div></div>`).join('')}</div>`;
+  }else if(tab==='agent'){
+    const logs=getStockAgentLog(sym);
+    el.innerHTML=`
+      <div class="stk-agent-card">
+        <div class="sac-head"><div class="sac-dot"></div><div class="sac-title">🤖 ${sym} Dedicated Agent</div><div class="sac-time">Active now</div></div>
+        <div class="sac-log">${logs.map(e=>`<div class="sal-row"><span class="sal-ico">${e.ico}</span><span style="flex:1;">${e.body}</span><span class="sal-time">${e.time}</span></div>`).join('')}</div>
+      </div>
+      <div style="font-size:9px;color:var(--mut);letter-spacing:.09em;text-transform:uppercase;margin-bottom:7px;">Agent Signal Summary</div>
+      <div style="font-size:10px;color:var(--mut);line-height:1.75;background:var(--card);border-radius:var(--rs);padding:11px 13px;">${d.reason||'Signal analysis loading…'}</div>`;
+  }else if(tab==='risks'){
+    const relatedNews=NEWS_POOL.filter(n=>n.sym===sym||n.sym==='MACRO').slice(0,3);
+    el.innerHTML=`
+      <div style="font-size:9px;color:var(--red);letter-spacing:.09em;text-transform:uppercase;margin-bottom:7px;">Key Risks</div>
+      <div style="font-size:11px;color:var(--tex);line-height:1.75;background:var(--rdim);border:1px solid rgba(255,79,109,.12);border-radius:var(--rs);padding:11px 13px;margin-bottom:13px;">${d.risks||'Risk analysis loading…'}</div>
+      ${d.swapSuggestion?`<div style="background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rs);padding:11px 13px;margin-bottom:13px;">
+        <div style="font-size:9px;color:var(--gld);letter-spacing:.09em;text-transform:uppercase;margin-bottom:5px;">↕ Swap Candidate</div>
+        <div style="font-size:11px;font-family:var(--F);font-weight:700;margin-bottom:3px;">${d.swapSuggestion.sym}</div>
+        <div style="font-size:10px;color:var(--mut);">${d.swapSuggestion.reason}</div>
+      </div>`:''}
+      ${relatedNews.length?`<div style="font-size:9px;color:var(--mut);letter-spacing:.09em;text-transform:uppercase;margin-bottom:7px;">Related News</div>`:''}
+      ${relatedNews.map(n=>`<div style="padding:8px 0;border-bottom:1px solid rgba(28,35,51,.4);"><div style="font-family:var(--F);font-size:10px;font-weight:700;margin-bottom:2px;">${n.title}</div><div style="font-size:9px;color:var(--mut);">${n.src} · ${n.time}</div></div>`).join('')}`;
+  }
+}
+
+// ════════════════════════════════════════
+// BROKERAGE MODAL
+// ════════════════════════════════════════
+function openBrokerModal(){
+  document.getElementById('broker-modal').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeBrokerModal(){
+  document.getElementById('broker-modal').classList.remove('on');
+  document.body.style.overflow='';
+}
+function selectBroker(broker){
+  closeBrokerModal();
+  // Show connecting state — backend OAuth flow would go here
+  const toast=document.createElement('div');
+  toast.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--aglow);border-radius:var(--r);padding:14px 18px;z-index:900;font-size:12px;color:var(--tex);box-shadow:0 8px 28px rgba(0,0,0,.5);max-width:320px;animation:pgIn .3s ease;';
+  const name=broker==='robinhood'?'Robinhood':'Webull';
+  toast.innerHTML=`<div style="font-family:var(--F);font-weight:800;font-size:13px;color:var(--acc);margin-bottom:4px;">🔗 Connecting to ${name}…</div>
+  <div style="color:var(--mut);font-size:11px;line-height:1.6;">SnapTrade OAuth integration is in active development. Join the waitlist to be first when it launches — your trades will sync automatically.</div>
+  <button class="btn bpri" style="margin-top:10px;width:100%;font-size:11px;" onclick="openLogin();this.closest('div[style]').remove()">Join Waitlist →</button>`;
+  document.body.appendChild(toast);
+  setTimeout(()=>{if(toast.parentNode)toast.remove();},8000);
+}
+
+// Stocks page init is triggered from the nav item onclick directly
+
+// ════════════════════════════════════════
 // LIVE PRICE SIMULATION
 // ════════════════════════════════════════
 const liveP={};

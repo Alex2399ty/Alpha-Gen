@@ -586,3 +586,81 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px;}
 /* ── PORTFOLIO TOTAL LIVE ── */
 .port-val-live{transition:color .3s;}
 .tki{transition:background .4s;border-radius:3px;}
+
+/* ── LIVE PRICE BADGE ── */
+.live-price-badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;color:var(--acc);padding:3px 10px;background:var(--adim);border:1px solid var(--aglow);border-radius:100px;white-space:nowrap;}
+
+/* ── STOCKS PAGE ── */
+.stk-tabs{display:flex;gap:3px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rs);padding:3px;margin-bottom:14px;flex-wrap:wrap;}
+.stk-tab{padding:5px 11px;border-radius:5px;font-family:var(--F);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--mut);}
+.stk-tab.on{background:var(--card);color:var(--tex);box-shadow:0 1px 4px rgba(0,0,0,.4);}
+.stk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;}
+.stk-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s;}
+.stk-card:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,0,0,.3);}
+.stk-sym{font-family:var(--F);font-size:18px;font-weight:800;letter-spacing:-.5px;}
+.stk-name{font-size:9px;color:var(--mut);margin-bottom:10px;margin-top:1px;}
+.stk-price{font-family:var(--F);font-size:16px;font-weight:700;}
+.stk-chg{font-size:11px;font-weight:600;margin-top:1px;}
+.stk-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:9px;border-top:1px solid var(--bdr);}
+.stk-sig{font-family:var(--F);font-size:9px;font-weight:700;padding:2px 8px;border-radius:100px;}
+.stk-meta{font-size:9px;color:var(--mut);}
+
+/* ── STOCK DETAIL PANEL ── */
+.stk-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:199;display:none;backdrop-filter:blur(3px);}
+.stk-overlay.on{display:block;}
+.stk-panel{position:fixed;right:-490px;top:0;width:470px;height:100vh;background:var(--sur);border-left:1px solid var(--bdr2);z-index:200;transition:right .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.5);}
+.stk-panel.open{right:0;}
+.sp-head{padding:16px 18px 14px;border-bottom:1px solid var(--bdr);flex-shrink:0;}
+.sp-sym{font-family:var(--F);font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1;}
+.sp-name{font-size:10px;color:var(--mut);margin-top:2px;}
+.sp-price{font-family:var(--F);font-size:30px;font-weight:800;letter-spacing:-2px;color:var(--acc);}
+.sp-chg{font-size:13px;font-weight:700;}
+.sp-body{flex:1;overflow-y:auto;padding:14px 18px;scrollbar-width:thin;scrollbar-color:var(--fnt) transparent;}
+.sp-tabs{display:flex;gap:2px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rs);padding:3px;margin-bottom:14px;}
+.sp-tab{flex:1;padding:5px 8px;border-radius:4px;font-family:var(--F);font-size:10px;font-weight:600;cursor:pointer;text-align:center;color:var(--mut);transition:all .13s;}
+.sp-tab.on{background:var(--sur);color:var(--tex);box-shadow:0 1px 3px rgba(0,0,0,.3);}
+/* Price targets */
+.target-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:13px;}
+.tgt-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--rs);padding:11px 9px;text-align:center;}
+.tgt-period{font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+.tgt-price{font-family:var(--F);font-size:17px;font-weight:800;color:var(--acc);letter-spacing:-.5px;}
+.tgt-ret{font-size:10px;font-weight:700;margin-top:3px;color:var(--acc);}
+/* Signal block */
+.sig-block{display:flex;align-items:center;gap:11px;padding:12px 14px;background:var(--card);border-radius:var(--rs);margin-bottom:12px;}
+.sig-block-badge{font-family:var(--F);font-size:12px;font-weight:800;padding:5px 14px;border-radius:100px;white-space:nowrap;flex-shrink:0;}
+.sig-block-right{flex:1;}
+.sig-conf-row{display:flex;justify-content:space-between;font-size:9px;color:var(--mut);margin-bottom:4px;}
+.sig-conf-bar{height:4px;background:var(--fnt);border-radius:2px;overflow:hidden;}
+.sig-conf-fill{height:100%;border-radius:2px;transition:width .8s ease;}
+/* Stock agent */
+.stk-agent-card{background:linear-gradient(135deg,rgba(0,229,160,.05),transparent);border:1px solid rgba(0,229,160,.12);border-radius:var(--rs);padding:11px 13px;margin-bottom:12px;}
+.sac-head{display:flex;align-items:center;gap:7px;margin-bottom:9px;}
+.sac-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);animation:lp 1.8s infinite;}
+.sac-title{font-family:var(--F);font-size:10px;font-weight:700;color:var(--acc);}
+.sac-time{font-size:9px;color:var(--mut);margin-left:auto;}
+.sac-log{display:flex;flex-direction:column;gap:5px;}
+.sal-row{display:flex;gap:8px;align-items:flex-start;font-size:10px;color:var(--mut);line-height:1.55;padding:4px 0;border-bottom:1px solid rgba(28,35,51,.4);}
+.sal-row:last-child{border-bottom:none;}
+.sal-ico{font-size:11px;flex-shrink:0;}
+.sal-time{font-size:9px;color:var(--fnt);flex-shrink:0;margin-left:auto;}
+
+/* ── BROKERAGE MODAL ── */
+.broker-modal{position:fixed;inset:0;background:rgba(7,9,14,.88);backdrop-filter:blur(14px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.broker-modal.on{opacity:1;pointer-events:all;}
+.broker-box{background:var(--card);border:1px solid var(--bdr2);border-radius:18px;max-width:480px;width:94%;overflow:hidden;transform:translateY(14px) scale(.97);transition:transform .26s cubic-bezier(.34,1.3,.64,1);}
+.broker-modal.on .broker-box{transform:none;}
+.broker-head{padding:20px 22px 14px;border-bottom:1px solid var(--bdr);}
+.broker-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 22px;}
+.broker-card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:18px 14px;cursor:pointer;text-align:center;transition:all .18s;}
+.broker-card:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3);}
+.broker-card.soon{opacity:.5;cursor:default;}
+.broker-card.soon:hover{border-color:var(--bdr);transform:none;box-shadow:none;}
+.broker-icon{font-size:30px;margin-bottom:8px;}
+.broker-name{font-family:var(--F);font-size:13px;font-weight:800;margin-bottom:3px;}
+.broker-desc{font-size:9px;color:var(--mut);}
+.broker-tag{font-size:9px;font-family:var(--F);font-weight:700;padding:2px 8px;border-radius:100px;margin-top:7px;display:inline-block;}
+
+@media(max-width:768px){
+  .stk-panel{width:100%;right:-100%;}
+  .stk-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+}
