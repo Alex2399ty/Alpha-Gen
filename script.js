@@ -258,10 +258,10 @@ const SIM_STEPS=[
 ];
 function runSim(){
   const loader=document.getElementById('sim-loader');
-  const right=document.getElementById('sim-right');
-  if(loader){
+  const results=document.getElementById('sim-results');
+  if(loader&&results){
     loader.classList.add('on');
-    right.style.visibility='hidden';right.style.position='absolute';
+    results.style.display='none';
     let step=0;
     const stepEl=document.getElementById('sim-step-txt');
     const subEl=document.getElementById('sim-step-sub');
@@ -276,15 +276,15 @@ function runSim(){
         if(progEl)progEl.style.width='100%';
         setTimeout(()=>{
           loader.classList.remove('on');
-          right.style.visibility='';right.style.position='';
+          results.style.display='';
           _runSimCore();
-        },300);
+        },280);
         return;
       }
       if(stepEl)stepEl.textContent=SIM_STEPS[step].s;
       if(subEl)subEl.textContent=SIM_STEPS[step].sub;
       if(progEl)progEl.style.width=((step+1)/SIM_STEPS.length*100)+'%';
-    },480);
+    },460);
     return;
   }
   _runSimCore();
@@ -341,7 +341,7 @@ function _runSimCore(){
   const secRows=Object.entries(secMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([s,c])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(28,35,51,.4);"><span style="font-size:10px;">${s}</span><span style="font-family:var(--F);font-size:10px;font-weight:700;">${Math.round(c/selected.length*100)}%</span></div>`).join('');
   const sc={Technology:'var(--blu)','AI / Data':'var(--acc)',Healthcare:'var(--pur)',Financials:'var(--blu)',Consumer:'var(--gld)',Energy:'var(--gld)',Industrials:'var(--mut)','Real Estate':'var(--gld)',Utilities:'var(--blu)',Materials:'var(--gld)'};
 
-  document.getElementById('sim-right').innerHTML=`
+  (document.getElementById('sim-results')||document.getElementById('sim-right')).innerHTML=`
     <div class="proj-card" style="margin-bottom:12px;">
       <div class="proj-h"><div class="proj-title">Simulation Results — ${hor}-Year Projection</div><div class="proj-sub">$${start.toLocaleString()} start + $${dca.toLocaleString()}/mo DCA · ${selected.length} holdings · Risk ${risk}/10 · ${lev}</div></div>
       <div class="proj-b">
@@ -393,25 +393,7 @@ function runSleep(el,yr,name,pct,recov){
 }
 setTimeout(()=>{const sc=document.querySelector('.slp-c.on');if(sc)runSleep(sc,'2020','COVID Crash',-34,5);},100);
 
-// QUIZ
-let qStep=1,qA={};
-function buildQD(){const d=document.getElementById('qdots');if(!d)return;d.innerHTML='';for(let i=1;i<=4;i++){const dot=document.createElement('div');dot.className='qd'+(i<qStep?' done':i===qStep?' now':'');d.appendChild(dot);}}
-buildQD();
-function qa(el,step){el.closest('.qopts').querySelectorAll('.qopt').forEach(o=>o.classList.remove('on'));el.classList.add('on');qA[step]=el.querySelector('.qkey').textContent;}
-function qn(s){document.getElementById('qs-'+(s-1)).style.display='none';document.getElementById('qs-'+s).style.display='block';qStep=s;buildQD();}
-function qb(s){document.getElementById('qs-'+(s+1)).style.display='none';document.getElementById('qs-'+s).style.display='block';qStep=s;buildQD();}
-function qshow(){
-  document.getElementById('qs-4').style.display='none';document.getElementById('qdots').style.display='none';
-  const qr=document.getElementById('qr');qr.classList.add('on');
-  const a2=qA[2]||'C',a4=qA[4]||'C';
-  let nm,desc;
-  if(a4==='B'){nm='Steady Climber';desc='Your priority is income. AlphaGen would build you a portfolio of Dividend Kings, high-yield ETFs, and REITs with automatic DRIP — generating reliable income while growing wealth.';}
-  else if(a4==='D'){nm='Capital Guardian';desc='Capital preservation is your priority. AlphaGen keeps your portfolio in quality dividend payers, bonds, and defensive sectors — growing slowly and reliably.';}
-  else if(a2==='D'&&a4==='A'){nm='Alpha Hunter';desc='You have conviction and time to handle volatility for maximum returns. AlphaGen builds a high-conviction portfolio of quality growth compounders with optional leveraged exposure.';}
-  else if(a2==='A'||a2==='B'){nm='Steady Climber';desc='Stability matters to you. AlphaGen diversifies with quality dividend payers and defensive positions — building wealth with far less volatility.';}
-  else{nm='Growth Seeker';desc="You're balanced — growth-focused but not reckless. AlphaGen builds a quality growth portfolio with dividend growers mixed in, and a DCA strategy that turns every dip into a buying opportunity.";}
-  document.getElementById('qrn').textContent=nm;document.getElementById('qrd').textContent=desc;
-}
+// Old quiz functions removed — replaced by adaptive quiz system below
 
 // ════════════════════════════════════════
 // MISC
@@ -727,6 +709,43 @@ function lTab(t,el){
   const target=document.getElementById('l-'+t);if(target)target.style.display='block';
   if(t==='quiz')initAdaptiveQuiz();
 }
+
+// ════════════════════════════════════════
+// AGENT HEARTBEAT — live updates every 25s
+// ════════════════════════════════════════
+const HEARTBEAT_ENTRIES=[
+  {ico:'📰',sym:'NVDA',body:'Sentiment scan complete: 94 articles this week, 87% positive. Thesis confidence maintained.'},
+  {ico:'🔍',sym:'MSFT',body:'Form 4 check: no new insider activity. Last open-market buy: $680K (Mar 3). Clean.'},
+  {ico:'🌍',sym:'MACRO',body:'CPI data within expected range. No portfolio rebalancing triggered. Growth weight maintained.'},
+  {ico:'🧠',sym:'PLTR',body:'Karp Q1 earnings call language rescored: 9.1 → 9.3. Specificity index improved.'},
+  {ico:'❤️',sym:'PORTFOLIO',body:'Daily health check passed. Correlation: 0.72. Concentration: 7 holdings. Score: 83/100.'},
+  {ico:'📅',sym:'DCA',body:'Next DCA run: Monday 9:30 AM. $300 allocation confirmed across 7 holdings.'},
+  {ico:'📰',sym:'AMZN',body:'AWS news scan: 3 articles on hyperscaler competition. Impact assessment: neutral to positive.'},
+  {ico:'🔍',sym:'AVGO',body:'Form 4 update: Hock Tan open-market purchase verified. Signal strength: HIGH — non-10b5-1.'},
+  {ico:'🌍',sym:'LLY',body:'GLP-1 trial data monitoring: tirzepatide head-to-head vs semaglutide results confirmed positive.'},
+  {ico:'🧠',sym:'COST',body:'Membership renewal data updated: 93.2% (new all-time high). Management score confirmed 9.4.'},
+];
+let hbIdx=0;
+function agentHeartbeat(){
+  const log=document.getElementById('agent-log');
+  if(!log)return;
+  const e=HEARTBEAT_ENTRIES[hbIdx%HEARTBEAT_ENTRIES.length];
+  hbIdx++;
+  const el=document.createElement('div');
+  el.className='act-entry';
+  el.style.animation='pgIn .35s ease both';
+  el.innerHTML=`<span class="act-ico">${e.ico}</span><div class="act-body"><span class="act-sym">${e.sym}</span>${e.body}</div><span class="act-time">Just now</span>`;
+  log.insertBefore(el,log.firstChild);
+  while(log.children.length>14)log.removeChild(log.lastChild);
+  // Update the running agent chip timing
+  document.querySelectorAll('.agent-time').forEach(t=>{
+    if(t.textContent.includes('ago')){const m=parseInt(t.textContent);if(!isNaN(m))t.textContent=(m+1)+'m ago';}
+  });
+  // Pulse the CEO agent chip as "completing"
+  const procChip=document.querySelector('.agent-chip.proc .agent-time');
+  if(procChip){procChip.textContent='Updated just now';setTimeout(()=>{if(procChip)procChip.textContent='Running now…';},3000);}
+}
+setInterval(agentHeartbeat,25000);
 
 // ════════════════════════════════════════
 // INIT ALL NEW FEATURES

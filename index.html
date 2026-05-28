@@ -298,19 +298,21 @@
       </div>
       <button class="sim-run" onclick="runSim()">🚀 Run Simulation →</button>
     </div>
-    <!-- Simulation loader -->
-    <div id="sim-loader" class="sim-loader">
-      <div class="sim-spinner"></div>
-      <div class="sim-step" id="sim-step-txt">Initializing agents…</div>
-      <div class="sim-step-sub" id="sim-step-sub">Preparing your personalized analysis</div>
-      <div class="sim-progress"><div class="sim-progress-fill" id="sim-prog-fill"></div></div>
-    </div>
     <div id="sim-right">
-      <div class="proj-card" style="padding:48px 32px;text-align:center;">
-        <div style="font-size:46px;margin-bottom:13px;opacity:.3;">🧪</div>
-        <div style="font-family:var(--F);font-size:15px;font-weight:700;margin-bottom:6px;">Your Simulation Awaits</div>
-        <p style="font-size:11px;color:var(--mut);line-height:1.7;max-width:300px;margin:0 auto 16px;">Set your investment amount, risk level, and sectors — then hit Run to see projected returns and a full portfolio with AI reasoning.</p>
-        <button class="btn bpri" onclick="runSim()">Run My First Simulation →</button>
+      <!-- Loader lives INSIDE sim-right so it never escapes the grid column -->
+      <div id="sim-loader" class="sim-loader">
+        <div class="sim-spinner"></div>
+        <div class="sim-step" id="sim-step-txt">Initializing agents…</div>
+        <div class="sim-step-sub" id="sim-step-sub">Preparing your personalized analysis</div>
+        <div class="sim-progress"><div class="sim-progress-fill" id="sim-prog-fill"></div></div>
+      </div>
+      <div id="sim-results">
+        <div class="proj-card" style="padding:48px 32px;text-align:center;">
+          <div style="font-size:46px;margin-bottom:13px;opacity:.3;">🧪</div>
+          <div style="font-family:var(--F);font-size:15px;font-weight:700;margin-bottom:6px;">Your Simulation Awaits</div>
+          <p style="font-size:11px;color:var(--mut);line-height:1.7;max-width:300px;margin:0 auto 16px;">Set your investment amount, risk level, and sectors — then hit Run to see projected returns and a full portfolio with AI reasoning.</p>
+          <button class="btn bpri" onclick="runSim()">Run My First Simulation →</button>
+        </div>
       </div>
     </div>
   </div>
@@ -581,7 +583,7 @@
   </div>
 </div>
 
-<script src="data.js"></script>
+<script src="Data.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
