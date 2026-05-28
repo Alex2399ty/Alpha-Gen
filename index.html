@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AlphaGen — Invest Like You Mean It</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sb" id="sb">
+  <div class="sb-logo"><div class="mark">Alpha<span>Gen</span></div><div class="sub">AI Portfolio Intelligence</div></div>
+  <nav class="sb-nav">
+    <div class="nl">Investing</div>
+    <div class="ni on" onclick="nav('portfolio',this)"><span class="ico">📊</span>Portfolio<span class="nbadge bg">+2.26%</span></div>
+    <div class="ni" onclick="nav('simulation',this)"><span class="ico">🧪</span>Simulation Lab<span class="nbadge bb">NEW</span></div>
+    <div class="ni" onclick="nav('dividends',this)"><span class="ico">💰</span>Dividends</div>
+    <div class="ni" onclick="nav('watchlist',this)"><span class="ico">👁</span>Watchlist<span class="nbadge br">3</span></div>
+    <div class="nl">Insights</div>
+    <div class="ni" onclick="nav('learn',this)"><span class="ico">🎓</span>Learn<span class="nbadge bb">5 new</span></div>
+    <div class="ni" onclick="nav('markets',this)"><span class="ico">🌍</span>Markets</div>
+    <div class="nl">Account</div>
+    <div class="ni" onclick="nav('pricing',this)"><span class="ico">⚡</span>Upgrade</div>
+  </nav>
+  <div class="sb-foot">
+    <div class="user-row" onclick="openLogin()"><div class="avatar" id="av">👤</div><div><div class="uname" id="uname">Guest</div><div class="utier" id="utier">Free Plan · Click to sign in</div></div></div>
+    <div class="up-btn" onclick="openLogin()">Sign In / Create Account →</div>
+  </div>
+</aside>
+
+<!-- ══ LOGIN PANEL ══ -->
+<div class="lp-overlay" id="lp-ov" onclick="closeLogin()"></div>
+<div class="login-panel" id="login-panel">
+  <div class="lp-head">
+    <div style="font-family:var(--F);font-size:16px;font-weight:800;">Welcome to <span style="color:var(--acc);">AlphaGen</span></div>
+    <button class="lp-close" onclick="closeLogin()">×</button>
+  </div>
+  <div class="lp-tabs">
+    <div class="lp-tab on" id="lt-su" onclick="lpTab('su')">Sign Up</div>
+    <div class="lp-tab" id="lt-li" onclick="lpTab('li')">Log In</div>
+  </div>
+  <div class="lp-body">
+    <div id="lp-su">
+      <div class="soc-row">
+        <div class="soc-b" onclick="lpQuick()">🔵 Google</div>
+        <div class="soc-b" onclick="lpQuick()">🍎 Apple</div>
+      </div>
+      <div class="lp-or">or with email</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="lf"><label>First Name</label><input id="su-fn" type="text" placeholder="Alex"/></div>
+        <div class="lf"><label>Last Name</label><input id="su-ln" type="text" placeholder="Chen"/></div>
+      </div>
+      <div class="lf"><label>Email</label><input id="su-em" type="email" placeholder="alex@gmail.com"/></div>
+      <div class="lf"><label>Password</label>
+        <div class="pw-wr">
+          <input id="su-pw" type="password" placeholder="Create a strong password" oninput="pwStr(this.value)"/>
+          <button class="pw-eye" onclick="tgPw('su-pw',this)" type="button">👁</button>
+        </div>
+        <div class="pw-bar" id="pw-bar"></div>
+      </div>
+      <button class="lp-btn" onclick="lpSignup()">Create Account →</button>
+      <div class="lp-guest" onclick="lpGuest()">or <span>continue as guest</span> (limited access)</div>
+    </div>
+    <div id="lp-li" style="display:none;">
+      <div class="soc-row">
+        <div class="soc-b" onclick="lpQuick()">🔵 Google</div>
+        <div class="soc-b" onclick="lpQuick()">🍎 Apple</div>
+      </div>
+      <div class="lp-or">or with email</div>
+      <div class="lf"><label>Email</label><input id="li-em" type="email" placeholder="your@email.com"/></div>
+      <div class="lf"><label>Password</label>
+        <div class="pw-wr">
+          <input id="li-pw" type="password" placeholder="Your password"/>
+          <button class="pw-eye" onclick="tgPw('li-pw',this)" type="button">👁</button>
+        </div>
+      </div>
+      <div style="text-align:right;margin-bottom:12px;"><span style="font-size:10px;color:var(--acc);cursor:pointer;">Forgot password?</span></div>
+      <button class="lp-btn" onclick="lpLogin()">Log In →</button>
+      <div class="lp-guest" onclick="lpGuest()">or <span>continue as guest</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+  <div class="ticker-bar"><div class="tk-track" id="ticker"></div></div>
+  <div class="topbar">
+    <div class="tb-l">
+      <div><div class="tb-title" id="tb-title">Portfolio</div><div class="tb-sub" id="tb-sub">Growth Seeker · Synced with Robinhood</div></div>
+    </div>
+    <div class="tb-r">
+      <div class="chip"><span class="live"></span>Markets Open</div>
+      <div class="chip" onclick="openCheckin()">🔄 Weekly Check-In</div>
+      <div class="chip" onclick="openLogin()">🔗 Connect Brokerage</div>
+      <button class="btn bpri" style="font-size:11px;padding:6px 12px;" onclick="openLogin()">+ Add Funds</button>
+    </div>
+  </div>
+  <div class="content">
+
+<!-- ══ PORTFOLIO ══ -->
+<div class="pg on" id="pg-portfolio">
+  <div class="ph"><div class="pe">// Portfolio</div><h1 class="pt">Your <em>AlphaGen</em> Portfolio</h1><p class="ps">AI-powered. Fully transparent. Every signal, decision, and reasoning shown.</p></div>
+
+  <div class="g4" style="margin-bottom:13px;">
+    <div class="sc"><div class="sv" style="color:var(--acc);">$12,847</div><div class="sl">Total Value</div><div class="sdx up">▲ +2.26% today</div></div>
+    <div class="sc"><div class="sv" style="color:var(--acc);">+28.4%</div><div class="sl">Total Return</div><div class="sdx up">vs S&P 500 +12.1%</div></div>
+    <div class="sc"><div class="sv" style="color:var(--gld);">$847</div><div class="sl">Annual Dividends</div><div class="sdx" style="color:var(--gld);">DRIP active</div></div>
+    <div class="sc"><div class="sv">83</div><div class="sl">Portfolio Health</div><div class="sdx up">↑ up from 79</div></div>
+  </div>
+
+  <div class="port-grid" style="margin-bottom:13px;">
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:13px;">
+
+      <!-- Holdings table -->
+      <div class="card">
+        <div class="ch"><div><div class="ct">Holdings</div><div class="cs">Click 💡 for full AI thesis on any position</div></div><span class="tag tg">All positions up today</span></div>
+        <div class="cb" style="padding:0 13px;">
+          <table class="h-table">
+            <thead><tr><th>Stock</th><th>Allocation</th><th>Price</th><th>Today</th><th>1 Mo</th><th></th></tr></thead>
+            <tbody id="h-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DAILY SIGNALS — the new feature -->
+      <div class="card">
+        <div class="ch">
+          <div><div class="ct">⚡ Daily Hold / Sell Signals</div><div class="cs">AI analysis updated every morning — full reasoning on each position</div></div>
+          <span class="tag to">Updated 6:30 AM</span>
+        </div>
+        <div class="cb" style="padding:0 13px;">
+          <div id="signals-list"></div>
+        </div>
+      </div>
+
+      <div class="cs-bar">
+        <div style="display:flex;align-items:center;gap:9px;"><span style="font-size:18px;">🏦</span><div><div style="font-family:var(--F);font-size:11px;font-weight:700;">Cash Sweep</div><div style="font-size:9px;color:var(--mut);">$843 idle cash automatically earning</div></div></div>
+        <div style="text-align:right;"><div class="cs-apy">4.8% APY</div><div style="font-size:9px;color:var(--mut);">~$40/yr</div></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:13px;">
+      <div class="card">
+        <div class="ch"><div><div class="ct">📰 Today's News</div><div class="cs">Stories impacting your holdings</div></div><span class="tag tb2">Live</span></div>
+        <div class="cb">
+          <div class="news-item"><div class="ni-ico">📈</div><div><div class="ni-sym">PLTR</div><div class="ni-title">Karp Buys $2.1M Open Market — Strongest Insider Signal This Year</div><div class="ni-meta">Reuters · 9:42 AM</div><div class="ni-imp up">▲ Position increased +3.2%</div></div></div>
+          <div class="news-item"><div class="ni-ico">🏦</div><div><div class="ni-sym">MACRO</div><div class="ni-title">Fed Signals 2 Rate Cuts in H2 2026 — FOMC Minutes</div><div class="ni-meta">WSJ · 2:18 PM</div><div class="ni-imp up">▲ Growth tech weight raised</div></div></div>
+          <div class="news-item"><div class="ni-ico">💰</div><div><div class="ni-sym">JNJ</div><div class="ni-title">J&J Raises Dividend 4.8% — 62nd Consecutive Year</div><div class="ni-meta">Bloomberg · 10:05 AM</div><div class="ni-imp" style="color:var(--gld);">★ DRIP queued Mar 25</div></div></div>
+          <div class="news-item"><div class="ni-ico">🤖</div><div><div class="ni-sym">NVDA</div><div class="ni-title">Blackwell GPU Demand Exceeds Supply — Third Straight Quarter</div><div class="ni-meta">The Verge · 11:30 AM</div><div class="ni-imp up">▲ Confirms AI infra thesis</div></div></div>
+          <div class="news-item"><div class="ni-ico">☁️</div><div><div class="ni-sym">MSFT</div><div class="ni-title">Azure AI Revenue Accelerates to 33% Growth in Q1</div><div class="ni-meta">CNBC · 8:15 AM</div><div class="ni-imp up">▲ Copilot adoption strong</div></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">⚡ AI Decisions Today</div><div class="cs">Full reasoning — every call explained</div></div>
+        <div class="cb">
+          <div class="log-e pos"><div class="log-hd"><div class="log-t">PLTR position +3.2%</div><div class="log-tm">9:42 AM</div></div><div class="log-b">CEO call confidence 87th percentile + $2.1M insider buy. AI confidence: <strong>9.1/10</strong>.</div></div>
+          <div class="log-e neu"><div class="log-hd"><div class="log-t">Macro rebalance: Bonds → Growth</div><div class="log-tm">2:18 PM</div></div><div class="log-b">Fed rate cut signals. Reduced bonds 15%→10%, added 5% to growth tech.</div></div>
+          <div class="log-e dv"><div class="log-hd"><div class="log-t">JNJ DRIP queued $18.40</div><div class="log-tm">10:05 AM</div></div><div class="log-b">Ex-div Mar 21 · Reinvesting into <strong>more JNJ shares</strong>.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SIMULATION ══ -->
+<div class="pg" id="pg-simulation">
+  <div class="ph"><div class="pe">// Simulation Lab</div><h1 class="pt">Build Your <em>Ideal Portfolio</em></h1><p class="ps">Enter your investment amount, set your parameters, and see exactly how your money would be allocated — with full AI reasoning on every holding.</p></div>
+  <div class="sim-wrap">
+    <div class="sim-left">
+      <div class="sim-sec">
+        <div class="sim-sh">💵 Investment Amount</div>
+        <div class="sim-bd">
+          <div class="srr"><div class="srr-top"><span class="srr-lbl">Starting Investment</span><span class="srr-val" id="sv-start">$5,000</span></div><input type="range" min="500" max="100000" value="5000" step="500" id="sr-start" oninput="svUp()"/></div>
+          <div class="srr"><div class="srr-top"><span class="srr-lbl">Monthly DCA</span><span class="srr-val" id="sv-dca">$300 / mo</span></div><input type="range" min="0" max="5000" value="300" step="25" id="sr-dca" oninput="svUp()"/></div>
+          <div class="srr"><div class="srr-top"><span class="srr-lbl">Time Horizon</span><span class="srr-val" id="sv-hor">15 years</span></div><input type="range" min="1" max="35" value="15" id="sr-hor" oninput="svUp()"/></div>
+          <div class="expl" id="inv-expl">Your setup: <strong>$5,000 start + $300/mo for 15 years</strong>. AlphaGen builds a portfolio sized to your exact numbers with dollar allocations per stock.</div>
+        </div>
+      </div>
+      <div class="sim-sec">
+        <div class="sim-sh">🎯 Risk Tolerance</div>
+        <div class="sim-bd">
+          <div class="srr"><div class="srr-top"><span class="srr-lbl">Risk Level (1 = safe · 10 = max)</span><span class="srr-val" id="sv-risk">6 / 10</span></div><input type="range" min="1" max="10" value="6" id="sr-risk" oninput="sv1('sv-risk',this.value+' / 10')"/></div>
+          <div class="trow">
+            <div class="sp on" data-g="rs">Balanced</div>
+            <div class="sp" data-g="rs">Growth</div>
+            <div class="sp" data-g="rs" style="--tc:var(--red);--td:var(--rdim)">Aggressive</div>
+            <div class="sp" data-g="rs" style="--tc:var(--blu);--td:var(--bdim)">Conservative</div>
+          </div>
+          <div class="expl" id="risk-expl"><strong>Balanced:</strong> Mix of quality growth and stability. Handles 20–35% drawdowns without panic selling.</div>
+        </div>
+      </div>
+      <div class="sim-sec">
+        <div class="sim-sh">📐 Leverage</div>
+        <div class="sim-bd">
+          <div class="trow">
+            <div class="sp on" data-g="lev">No Leverage</div>
+            <div class="sp" data-g="lev" style="--tc:var(--gld);--td:var(--gdim)">2x ETFs</div>
+            <div class="sp" data-g="lev" style="--tc:var(--red);--td:var(--rdim)">3x ETFs</div>
+          </div>
+          <div class="expl" id="lev-expl"><strong>No Leverage:</strong> Clean compounding. Losses capped at your investment. Recommended for the vast majority of investors.</div>
+        </div>
+      </div>
+      <div class="sim-sec">
+        <div class="sim-sh">💰 Dividend Strategy</div>
+        <div class="sim-bd">
+          <div class="trow">
+            <div class="sp on" data-g="div">Growth Focus</div>
+            <div class="sp" data-g="div" style="--tc:var(--gld);--td:var(--gdim)">Dividend Growth</div>
+            <div class="sp" data-g="div" style="--tc:var(--gld);--td:var(--gdim)">High Yield</div>
+          </div>
+          <div id="yield-row" style="display:none;" class="srr"><div class="srr-top"><span class="srr-lbl">Min Target Yield</span><span class="srr-val" id="sv-yield">2.5%</span></div><input type="range" min="0.5" max="7" value="2.5" step="0.5" id="sr-yield" oninput="sv1('sv-yield',this.value+'%')"/></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--sur);border-radius:var(--rs);">
+            <div class="tog-sw" id="drip-tog" onclick="this.classList.toggle('off')"><div class="tok"></div></div>
+            <div><div style="font-size:10px;font-family:var(--F);font-weight:700;">DRIP Auto-Reinvestment</div><div style="font-size:9px;color:var(--mut);">Dividends automatically buy more shares</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="sim-sec">
+        <div class="sim-sh">🏭 Sectors</div>
+        <div class="sim-bd">
+          <div class="trow" id="sec-trow" style="flex-wrap:wrap;">
+            <div class="sp on" data-g="sec" data-multi="1">Technology</div>
+            <div class="sp on" data-g="sec" data-multi="1">Healthcare</div>
+            <div class="sp" data-g="sec" data-multi="1">Financials</div>
+            <div class="sp" data-g="sec" data-multi="1">Energy</div>
+            <div class="sp" data-g="sec" data-multi="1">Consumer</div>
+            <div class="sp" data-g="sec" data-multi="1">Industrials</div>
+            <div class="sp on" data-g="sec" data-multi="1">AI / Data</div>
+            <div class="sp" data-g="sec" data-multi="1">Real Estate</div>
+            <div class="sp" data-g="sec" data-multi="1">Utilities</div>
+            <div class="sp" data-g="sec" data-multi="1">Materials</div>
+          </div>
+        </div>
+      </div>
+      <div class="sim-sec">
+        <div class="sim-sh">📏 Market Cap</div>
+        <div class="sim-bd">
+          <div class="trow">
+            <div class="sp" data-g="cap">Large Only</div>
+            <div class="sp on" data-g="cap">Large + Mid</div>
+            <div class="sp" data-g="cap">Include Small</div>
+          </div>
+          <div class="trow" style="margin-top:6px;">
+            <div class="sp on" data-g="veh" data-multi="1">Stocks</div>
+            <div class="sp on" data-g="veh" data-multi="1">ETFs</div>
+            <div class="sp" data-g="veh" data-multi="1">REITs</div>
+            <div class="sp" data-g="veh" data-multi="1">International</div>
+          </div>
+        </div>
+      </div>
+      <div class="sim-sec">
+        <div class="sim-sh">🧠 Management Quality</div>
+        <div class="sim-bd">
+          <div class="srr"><div class="srr-top"><span class="srr-lbl">Min CEO Score</span><span class="srr-val" id="sv-mgmt">7.0 / 10</span></div><input type="range" min="1" max="10" value="7" step="0.5" id="sr-mgmt" oninput="sv1('sv-mgmt',parseFloat(this.value).toFixed(1)+' / 10')"/></div>
+          <div class="expl"><strong>Why it matters:</strong> Stocks with CEO scores above 8.0 averaged +34% returns vs −9% for scores below 5.0 in our backtesting.</div>
+        </div>
+      </div>
+      <div class="sim-sec">
+        <div class="sim-sh">🔢 Portfolio Size</div>
+        <div class="sim-bd">
+          <div class="srr"><div class="srr-top"><span class="srr-lbl">Number of Holdings</span><span class="srr-val" id="sv-holds">10</span></div><input type="range" min="3" max="40" value="10" id="sr-holds" oninput="sv1('sv-holds',this.value)"/></div>
+          <div class="trow">
+            <div class="sp on" data-g="con">Diversified</div>
+            <div class="sp" data-g="con">Concentrated</div>
+            <div class="sp" data-g="con" style="--tc:var(--blu);--td:var(--bdim)">Index-Like</div>
+          </div>
+        </div>
+      </div>
+      <div class="sim-sec">
+        <div class="sim-sh">📌 Pin Specific Stocks</div>
+        <div class="sim-bd">
+          <div class="ss-wr">
+            <input class="fi" id="ss-in" placeholder="Search NVDA, AAPL, COST, TSLA..." oninput="ssSearch(this.value)" autocomplete="off"/>
+            <div class="ss-drop" id="ss-drop"></div>
+          </div>
+          <div id="pinned-list" style="display:flex;flex-direction:column;gap:5px;margin-top:7px;"></div>
+        </div>
+      </div>
+      <button class="sim-run" onclick="runSim()">🚀 Run Simulation →</button>
+    </div>
+    <div id="sim-right">
+      <div class="proj-card" style="padding:48px 32px;text-align:center;">
+        <div style="font-size:46px;margin-bottom:13px;opacity:.3;">🧪</div>
+        <div style="font-family:var(--F);font-size:15px;font-weight:700;margin-bottom:6px;">Your Simulation Awaits</div>
+        <p style="font-size:11px;color:var(--mut);line-height:1.7;max-width:300px;margin:0 auto 16px;">Set your investment amount, risk level, and sectors — then hit Run to see projected returns and a full portfolio with AI reasoning.</p>
+        <button class="btn bpri" onclick="runSim()">Run My First Simulation →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DIVIDENDS ══ -->
+<div class="pg" id="pg-dividends">
+  <div class="ph"><div class="pe">// Dividends</div><h1 class="pt">Turn Your Portfolio Into an <em>Income Machine</em></h1><p class="ps">Every dividend tracked, automatically reinvested, compounding silently in the background.</p></div>
+  <div class="g4" style="margin-bottom:13px;">
+    <div class="sc"><div class="sv" style="color:var(--gld);">$847</div><div class="sl">Annual Dividends</div><div class="sdx" style="color:var(--gld);">at current holdings</div></div>
+    <div class="sc"><div class="sv" style="color:var(--gld);">$70.58</div><div class="sl">Monthly Average</div><div class="sdx" style="color:var(--gld);">DRIP reinvesting</div></div>
+    <div class="sc"><div class="sv">1.6%</div><div class="sl">Portfolio Yield</div><div class="sdx up">▲ +0.2% from rebalance</div></div>
+    <div class="sc"><div class="sv" style="color:var(--gld);">$38.4K</div><div class="sl">20yr DRIP Projection</div><div class="sdx" style="color:var(--gld);">reinvestment alone</div></div>
+  </div>
+  <div class="g2">
+    <div style="display:flex;flex-direction:column;gap:13px;">
+      <div class="card"><div class="ch"><div class="ct">Dividend Holdings</div></div><div class="cb" style="padding:0 13px;">
+        <div class="div-row"><div><div class="dsym">VYM</div><div class="dstr">450+ holdings ETF</div></div><div style="text-align:right;"><div class="dyld">2.9%</div><div class="dann">$344/yr</div></div></div>
+        <div class="div-row"><div><div class="dsym">JNJ</div><div class="dstr">Dividend King 👑 · 62yr streak</div></div><div style="text-align:right;"><div class="dyld">3.2%</div><div class="dann">$186/yr</div></div></div>
+        <div class="div-row"><div><div class="dsym">AVGO</div><div class="dstr">14-year streak · 34% 5yr CAGR</div></div><div style="text-align:right;"><div class="dyld">1.6%</div><div class="dann">$228/yr</div></div></div>
+        <div class="div-row"><div><div class="dsym">MSFT</div><div class="dstr">Aristocrat · 22yr streak</div></div><div style="text-align:right;"><div class="dyld">0.7%</div><div class="dann">$89/yr</div></div></div>
+      </div></div>
+      <div class="card"><div class="ch"><div class="ct">DRIP Settings</div></div><div class="cb" style="display:flex;flex-direction:column;gap:9px;">
+        <div style="display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rs);">
+          <div class="tog-sw" onclick="this.classList.toggle('off')"><div class="tok"></div></div>
+          <div><div style="font-family:var(--F);font-size:11px;font-weight:700;">Auto-Reinvest All Dividends</div><div style="font-size:9px;color:var(--mut);">Dividends automatically buy more shares on payment date</div></div>
+        </div>
+        <div style="background:var(--gdim);border:1px solid rgba(245,166,35,.18);border-radius:var(--rs);padding:9px 11px;font-size:10px;color:var(--gld);">💡 JNJ's 3.2% yield today becomes ~8.4% yield-on-cost in 15 years as the dividend grows.</div>
+      </div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:13px;">
+      <div class="card"><div class="ch"><div class="ct">Dividend Calendar 2026</div><div class="cs">Monthly income estimate</div></div><div class="cb"><div class="div-cal">
+        <div class="dcal"><div class="dcal-m">Jan</div><div class="dcal-v">$68</div></div>
+        <div class="dcal"><div class="dcal-m">Feb</div><div class="dcal-v">$42</div></div>
+        <div class="dcal now"><div class="dcal-m">Mar ←</div><div class="dcal-v">$112</div></div>
+        <div class="dcal"><div class="dcal-m">Apr</div><div class="dcal-v">$68</div></div>
+        <div class="dcal"><div class="dcal-m">May</div><div class="dcal-v">$42</div></div>
+        <div class="dcal"><div class="dcal-m">Jun</div><div class="dcal-v">$112</div></div>
+        <div class="dcal"><div class="dcal-m">Jul</div><div class="dcal-v">$68</div></div>
+        <div class="dcal"><div class="dcal-m">Aug</div><div class="dcal-v">$42</div></div>
+        <div class="dcal"><div class="dcal-m">Sep</div><div class="dcal-v">$112</div></div>
+        <div class="dcal"><div class="dcal-m">Oct</div><div class="dcal-v">$68</div></div>
+        <div class="dcal"><div class="dcal-m">Nov</div><div class="dcal-v">$42</div></div>
+        <div class="dcal"><div class="dcal-m">Dec</div><div class="dcal-v">$71</div></div>
+      </div></div></div>
+      <div style="background:linear-gradient(135deg,rgba(245,166,35,.08),transparent);border:1px solid rgba(245,166,35,.18);border-radius:var(--r);padding:16px;">
+        <div style="font-size:9px;color:var(--gld);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">20-Year DRIP Projection</div>
+        <div style="font-family:var(--F);font-size:34px;font-weight:800;letter-spacing:-2px;color:var(--gld);">$38,400</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.6;">From dividend reinvestment alone at 7% avg annual dividend growth.</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:11px;">
+          <div style="display:flex;justify-content:space-between;padding:7px 9px;background:var(--card);border-radius:var(--rs);"><span style="font-size:10px;color:var(--mut);">Year 5 (2031)</span><span style="font-family:var(--F);font-size:11px;font-weight:700;color:var(--gld);">$6,200</span></div>
+          <div style="display:flex;justify-content:space-between;padding:7px 9px;background:var(--card);border-radius:var(--rs);"><span style="font-size:10px;color:var(--mut);">Year 10 (2036)</span><span style="font-family:var(--F);font-size:11px;font-weight:700;color:var(--gld);">$13,800</span></div>
+          <div style="display:flex;justify-content:space-between;padding:7px 9px;background:var(--card);border-radius:var(--rs);"><span style="font-size:10px;color:var(--mut);">Year 20 (2046)</span><span style="font-family:var(--F);font-size:11px;font-weight:700;color:var(--gld);">$38,400</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WATCHLIST ══ -->
+<div class="pg" id="pg-watchlist">
+  <div class="ph"><div class="pe">// Watchlist</div><h1 class="pt">Stocks You're <em>Watching</em></h1><p class="ps">Track stocks before you buy. AlphaGen monitors them and alerts you when the signal changes.</p></div>
+  <div class="g2">
+    <div class="card"><div class="ch"><div class="ct">Your Watchlist</div><div class="cs">AI monitors these daily</div></div>
+      <div class="cb" style="padding:0 13px;">
+        <div class="wl-row"><div class="wl-sym">AAPL</div><div class="wl-name"><div style="font-family:var(--F);font-size:11px;font-weight:600;">Apple Inc</div><div style="font-size:9px;color:var(--mut);">Consumer Tech · Large Cap</div></div><span class="wl-sig" style="background:var(--adim);color:var(--acc);">WATCH — Accumulate</span><button class="btn bpri bsm" style="font-size:9px;padding:3px 9px;" onclick="openWhy('AAPL')">Thesis</button></div>
+        <div class="wl-row"><div class="wl-sym">AMD</div><div class="wl-name"><div style="font-family:var(--F);font-size:11px;font-weight:600;">Advanced Micro Devices</div><div style="font-size:9px;color:var(--mut);">Semiconductors · Large Cap</div></div><span class="wl-sig" style="background:var(--adim);color:var(--acc);">HOLD OFF — Wait for pullback</span><button class="btn bpri" style="font-size:9px;padding:3px 9px;" onclick="openWhy('AMD')">Thesis</button></div>
+        <div class="wl-row"><div class="wl-sym">COST</div><div class="wl-name"><div style="font-family:var(--F);font-size:11px;font-weight:600;">Costco Wholesale</div><div style="font-size:9px;color:var(--mut);">Consumer Staples · Large Cap</div></div><span class="wl-sig" style="background:var(--bdim);color:var(--blu);">STRONG BUY — Add now</span><button class="btn bpri" style="font-size:9px;padding:3px 9px;" onclick="openWhy('COST')">Thesis</button></div>
+      </div>
+    </div>
+    <div class="card"><div class="ch"><div class="ct">Add to Watchlist</div><div class="cs">Search any stock</div></div>
+      <div class="cb">
+        <input class="fi" placeholder="Search TSLA, GOOGL, META..." style="margin-bottom:10px;"/>
+        <div style="font-size:10px;color:var(--mut);line-height:1.65;">AlphaGen will monitor your watchlist stocks daily and send you an alert when conditions become favorable to add them to your portfolio.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LEARN ══ -->
+<div class="pg" id="pg-learn">
+  <div class="ph"><div class="pe">// Learn</div><h1 class="pt">Know <em>Exactly</em> What You Own</h1><p class="ps">Lessons tied to live events in your portfolio. Glossary. Market explainers. All auto-updated.</p></div>
+  <div class="learn-tabs" id="learn-tabs">
+    <div class="ltab on" onclick="lTab('lessons',this)">Lessons</div>
+    <div class="ltab" onclick="lTab('glossary',this)">Glossary</div>
+    <div class="ltab" onclick="lTab('explainers',this)">Market Explainers</div>
+    <div class="ltab" onclick="lTab('sleep',this)">Sleep Test</div>
+    <div class="ltab" onclick="lTab('quiz',this)">Risk Quiz</div>
+  </div>
+
+  <!-- LESSONS -->
+  <div id="l-lessons"><div class="g3">
+    <div class="lc"><div class="lc-ico">📊</div><div class="lc-tag">Earnings · Triggered by PLTR</div><div class="lc-title">How to Read an Earnings Call Like a Pro</div><div class="lc-body">Why what a CEO doesn't say matters more than what they do. We walk through PLTR's Q4 transcript and every signal our AI flagged — including why Karp's word choice scored 9.1/10.</div><div class="lc-foot"><div class="lc-time">5 min</div><div class="lc-link">Live in your portfolio ↗</div></div></div>
+    <div class="lc"><div class="lc-ico">🏦</div><div class="lc-tag">Macro · Fed Decision Today</div><div class="lc-title">What the Fed Actually Does to Your Stocks</div><div class="lc-body">Interest rates changed today. Here's the exact mechanism that affects your growth stocks — and why we rebalanced your portfolio in response.</div><div class="lc-foot"><div class="lc-time">4 min</div><div class="lc-link">Triggered by today's news ↗</div></div></div>
+    <div class="lc"><div class="lc-ico">💰</div><div class="lc-tag">Dividends · Triggered by JNJ</div><div class="lc-title">Why Dividend Growth Crushes High Yield</div><div class="lc-body">JNJ yields 3.2% today — but its 62-year growth streak means yield-on-cost will be 8%+ in 15 years. The compounding math nobody teaches you.</div><div class="lc-foot"><div class="lc-time">6 min</div><div class="lc-link">Tied to JNJ position ↗</div></div></div>
+    <div class="lc"><div class="lc-ico">🧠</div><div class="lc-tag">Management Scoring</div><div class="lc-title">Why the CEO Is Your Most Important Investment</div><div class="lc-body">AlphaGen's CEO scoring explained — language patterns, insider buying, capital allocation track records. Why it's the #1 predictor of long-term returns.</div><div class="lc-foot"><div class="lc-time">7 min</div><div class="lc-link">Applies to all holdings ↗</div></div></div>
+    <div class="lc"><div class="lc-ico">📉</div><div class="lc-tag">Psychology</div><div class="lc-title">The One Thing That Destroys Most Investors</div><div class="lc-body">It's not picking bad stocks. It's selling good ones at the wrong time. The behavioral finance behind panic selling — and why DCA is the antidote.</div><div class="lc-foot"><div class="lc-time">5 min</div><div class="lc-link">Applied to your DCA ↗</div></div></div>
+    <div class="lc"><div class="lc-ico">🕵️</div><div class="lc-tag">Insider Trading · Triggered by PLTR</div><div class="lc-title">When Insider Buying Actually Means Something</div><div class="lc-body">Not all insider buys are equal. Karp's $2.1M open-market purchase is one of the rarest and most bullish signals. Here's how to read Form 4 filings.</div><div class="lc-foot"><div class="lc-time">4 min</div><div class="lc-link">Triggered by PLTR buy ↗</div></div></div>
+  </div></div>
+
+  <!-- GLOSSARY -->
+  <div id="l-glossary" style="display:none;">
+    <div class="g2"><div class="card"><div class="ch"><div class="ct">Key Terms</div><div class="cs">Plain English. Real examples from your portfolio.</div></div>
+    <div class="cb" style="padding:0 15px;" id="gls-body"></div></div>
+    <div class="card"><div class="ch"><div class="ct">Advanced Terms</div></div>
+    <div class="cb" style="padding:0 15px;" id="gls-body2"></div></div></div>
+  </div>
+
+  <!-- MARKET EXPLAINERS -->
+  <div id="l-explainers" style="display:none;">
+    <div class="g2">
+      <div>
+        <div class="me-card"><span class="tag tb2 me-tag">Interest Rates</span><div class="me-title">How Fed Rate Decisions Affect Your Portfolio</div><div class="me-body">When the Fed <strong>raises rates</strong>, it costs more to borrow money. This is bad for growth stocks (they need cheap capital to grow) and good for banks. When the Fed <strong>cuts rates</strong>, growth stocks benefit because future earnings are worth more at a lower discount rate. Today's signal: <strong style="color:var(--acc)">2 cuts expected in H2 2026 → bullish for NVDA, MSFT, PLTR, AMZN.</strong></div></div>
+        <div class="me-card"><span class="tag to me-tag">Earnings Calls</span><div class="me-title">Reading Between the Lines of Earnings Calls</div><div class="me-body">What gets said on earnings calls matters less than <strong>how it gets said</strong>. AlphaGen's agents analyze word confidence, hedging language frequency, and forward guidance precision. A CEO who gives specific numbers outperforms one who uses vague ranges by 12% over 3 years on average. We score every call automatically.</div></div>
+        <div class="me-card"><span class="tag tg me-tag">DCA Strategy</span><div class="me-title">Why Dollar Cost Averaging Is The Best Strategy</div><div class="me-body">DCA means investing a fixed amount at regular intervals regardless of price. When prices are low you automatically buy more shares. When prices are high you buy fewer. Over time this <strong>lowers your average cost per share</strong> and removes the impossible-to-win game of timing the market. Every crash becomes a buying opportunity.</div></div>
+      </div>
+      <div>
+        <div class="me-card"><span class="tag tr me-tag">Geopolitics</span><div class="me-title">How World Events Map to Your Holdings</div><div class="me-body">Taiwan tensions affect NVDA, AMD, and AAPL because TSMC manufactures their chips. Fed decisions affect growth stocks more than dividend payers. Oil price spikes benefit XOM but hurt consumer discretionary. AlphaGen maps every macro event to your specific holdings and explains the mechanism — not just the headline.</div></div>
+        <div class="me-card"><span class="tag tb2 me-tag">Compounding</span><div class="me-title">The Eighth Wonder of the World</div><div class="me-body">$300/month invested for 30 years at 10% average annual return becomes <strong>$658,000</strong> — but you only put in $108,000 of your own money. The other $550,000 is pure compounding. The critical insight: <strong>time is more important than amount</strong>. Starting at 22 vs 32 can mean a $400,000 difference at retirement with the same monthly contribution.</div></div>
+        <div class="me-card"><span class="tag to me-tag">Insider Trading</span><div class="me-title">Legal Insider Buying: The Signal Nobody Watches</div><div class="me-body">Executives must report stock purchases on <strong>SEC Form 4</strong> within 2 days. When a CEO buys their own stock on the open market (not a pre-planned 10b5-1 program), it means they believe the stock is undervalued. Karp's $2.1M PLTR purchase is one of the strongest buy signals we track — non-10b5-1 executive purchases outperform the market by 8.2% on average over 12 months.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLEEP TEST -->
+  <div id="l-sleep" style="display:none;">
+    <div class="card"><div class="ch"><div class="ct">The Sleep Test</div><div class="cs">See what your screen looks like during history's worst crashes before picking a risk profile</div></div><div class="cb">
+      <div style="font-family:var(--F);font-size:12px;font-weight:700;margin-bottom:9px;">Simulate a crash on your $12,847 portfolio:</div>
+      <div class="slp-cards">
+        <div class="slp-c" onclick="runSleep(this,'2008','Great Financial Crisis',-51,24)"><div class="slp-yr">2008</div><div class="slp-drop">-51%</div><div class="slp-nm">Great Financial Crisis</div></div>
+        <div class="slp-c on" onclick="runSleep(this,'2020','COVID Crash',-34,5)"><div class="slp-yr">2020</div><div class="slp-drop">-34%</div><div class="slp-nm">COVID Crash</div></div>
+        <div class="slp-c" onclick="runSleep(this,'2022','Rate Hike Bear',-27,14)"><div class="slp-yr">2022</div><div class="slp-drop">-27%</div><div class="slp-nm">Rate Hike Bear</div></div>
+      </div>
+      <div class="slp-res on" id="slp-res">
+        <div class="mock-ph">
+          <div style="font-size:8px;color:var(--mut);text-align:center;margin-bottom:8px;">YOUR PHONE · 8:32 AM</div>
+          <div class="mock-notif"><div class="mn-app">📱 ALPHAGEN</div><div class="mn-msg" id="slp-msg">Portfolio dropped -34% in COVID Crash</div><div class="mn-sub" id="slp-sub">Value: $8,479 · Down $4,368</div></div>
+          <div style="background:var(--sur);border-radius:6px;padding:8px;margin-top:6px;text-align:center;"><div style="font-size:8px;color:var(--mut);margin-bottom:2px;">AlphaGen says:</div><div style="font-family:var(--F);font-size:10px;font-weight:700;color:var(--acc);">Stay the course. DCA buys dips.</div></div>
+        </div>
+        <div>
+          <div class="slp-txt" id="slp-txt">After the <strong>COVID Crash</strong>, markets recovered in <strong>5 months</strong>. AlphaGen's DCA kept buying at lower prices — turning the crash into a buying opportunity. Investors who stayed invested recovered fastest.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px;">
+            <div style="background:var(--rdim);border:1px solid rgba(255,79,109,.2);border-radius:var(--rs);padding:9px;text-align:center;"><div style="font-family:var(--F);font-size:16px;font-weight:800;color:var(--red);" id="slp-loss">-$4,368</div><div style="font-size:9px;color:var(--mut);">Temporary Loss</div></div>
+            <div style="background:var(--adim);border:1px solid var(--aglow);border-radius:var(--rs);padding:9px;text-align:center;"><div style="font-family:var(--F);font-size:16px;font-weight:800;color:var(--acc);" id="slp-rec">5 mo.</div><div style="font-size:9px;color:var(--mut);">Full Recovery</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="l-quiz" style="display:none;">
+    <div class="card" style="max-width:540px;margin:0 auto;"><div class="ch"><div class="ct">Find Your Investor Profile</div><div class="cs">4 questions · 2 minutes</div></div><div class="cb">
+      <div class="qwrap">
+        <div class="qdots" id="qdots"></div>
+        <div id="qs-1"><div class="qq">When do you plan to use this money?</div><div class="qhint">Your time horizon is the #1 factor in portfolio design.</div><div class="qopts"><div class="qopt" onclick="qa(this,1)"><div class="qkey">A</div>Less than 3 years</div><div class="qopt" onclick="qa(this,1)"><div class="qkey">B</div>3–7 years</div><div class="qopt" onclick="qa(this,1)"><div class="qkey">C</div>7–15 years</div><div class="qopt" onclick="qa(this,1)"><div class="qkey">D</div>15+ years</div></div><div class="qnav"><span class="qct">1 of 4</span><button class="btn bpri" onclick="qn(2)">Next →</button></div></div>
+        <div id="qs-2" style="display:none"><div class="qq">Portfolio drops 30% tomorrow. You:</div><div class="qhint">Be honest — this determines how much risk suits you.</div><div class="qopts"><div class="qopt" onclick="qa(this,2)"><div class="qkey">A</div>Sell everything immediately</div><div class="qopt" onclick="qa(this,2)"><div class="qkey">B</div>Lose sleep but hold on</div><div class="qopt" onclick="qa(this,2)"><div class="qkey">C</div>Stay calm — long-term thinking</div><div class="qopt" onclick="qa(this,2)"><div class="qkey">D</div>Buy more — it's a discount</div></div><div class="qnav"><button class="btn bout" onclick="qb(1)">← Back</button><span class="qct">2 of 4</span><button class="btn bpri" onclick="qn(3)">Next →</button></div></div>
+        <div id="qs-3" style="display:none"><div class="qq">Which sector excites you most?</div><div class="qhint">We'll overweight your interests while keeping you diversified.</div><div class="qopts"><div class="qopt" onclick="qa(this,3)"><div class="qkey">A</div>AI & Technology</div><div class="qopt" onclick="qa(this,3)"><div class="qkey">B</div>Healthcare & Biotech</div><div class="qopt" onclick="qa(this,3)"><div class="qkey">C</div>Dividend income — steady compounding</div><div class="qopt" onclick="qa(this,3)"><div class="qkey">D</div>Let the AI decide</div></div><div class="qnav"><button class="btn bout" onclick="qb(2)">← Back</button><span class="qct">3 of 4</span><button class="btn bpri" onclick="qn(4)">Next →</button></div></div>
+        <div id="qs-4" style="display:none"><div class="qq">What matters most to you?</div><div class="qhint">This shapes your entire portfolio strategy.</div><div class="qopts"><div class="qopt" onclick="qa(this,4)"><div class="qkey">A</div>Maximum long-term growth</div><div class="qopt" onclick="qa(this,4)"><div class="qkey">B</div>Reliable dividend income</div><div class="qopt" onclick="qa(this,4)"><div class="qkey">C</div>Balanced growth & income</div><div class="qopt" onclick="qa(this,4)"><div class="qkey">D</div>Capital preservation</div></div><div class="qnav"><button class="btn bout" onclick="qb(3)">← Back</button><span class="qct">4 of 4</span><button class="btn bpri" onclick="qshow()">See My Profile →</button></div></div>
+        <div class="qresult" id="qr"><div style="font-size:34px;margin-bottom:6px;">🎯</div><div style="font-size:10px;color:var(--mut);">Your profile</div><div class="qrn" id="qrn">Growth Seeker</div><p class="qrd" id="qrd"></p><button class="btn bpri" onclick="openLogin()">Build My Portfolio Free →</button></div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══ MARKETS ══ -->
+<div class="pg" id="pg-markets">
+  <div class="ph"><div class="pe">// Markets</div><h1 class="pt">What's Moving <em>Your Portfolio</em></h1><p class="ps">Insider trades, institutional moves, macro events — filtered to what matters for your holdings.</p></div>
+  <div class="g2" style="margin-bottom:13px;">
+    <div class="card"><div class="ch"><div class="ct">Insider Trades (Form 4)</div><div class="cs">SEC filings · Daily</div></div><div class="cb">
+      <div class="sig-row2"><div><div class="sig-who">PLTR — Alex Karp (CEO)</div><div class="sig-det">Open market purchase · Feb 28</div></div><div style="text-align:right;"><div class="sig-act act-buy">BUY</div><div style="font-family:var(--F);font-size:12px;font-weight:700;color:var(--acc);">$2.1M</div></div></div>
+      <div class="sig-row2"><div><div class="sig-who">AVGO — Hock Tan (CEO)</div><div class="sig-det">Open market purchase · Mar 10</div></div><div style="text-align:right;"><div class="sig-act act-buy">BUY</div><div style="font-family:var(--F);font-size:12px;font-weight:700;color:var(--acc);">$4.2M</div></div></div>
+      <div class="sig-row2"><div><div class="sig-who">MSFT — Satya Nadella</div><div class="sig-det">Open market purchase · Mar 3</div></div><div style="text-align:right;"><div class="sig-act act-buy">BUY</div><div style="font-family:var(--F);font-size:12px;font-weight:700;color:var(--acc);">$680K</div></div></div>
+      <div class="sig-row2"><div><div class="sig-who">NVDA — Jensen Huang</div><div class="sig-det">10b5-1 plan sale · Pre-planned routine</div></div><div style="text-align:right;"><div class="sig-act act-sell">SELL</div><div style="font-family:var(--F);font-size:12px;font-weight:700;color:var(--red);">$8.4M</div></div></div>
+      <div style="font-size:10px;color:var(--mut);margin-top:8px;padding:7px 9px;background:var(--sur);border-radius:var(--rs);">💡 Open-market CEO buys (non-10b5-1) outperform the market by 8.2% on average over 12 months.</div>
+    </div></div>
+    <div class="card"><div class="ch"><div class="ct">Institutional Moves (13F)</div><div class="cs">Quarterly SEC filings from top funds</div></div><div class="cb">
+      <div class="sig-row2"><div><div class="sig-who">Ackman / Pershing Square</div><div class="sig-det">New position in PLTR — Q4 2025</div></div><div style="text-align:right;"><div class="sig-act act-new">NEW</div><div style="font-family:var(--F);font-size:12px;font-weight:700;color:var(--blu);">$180M</div></div></div>
+      <div class="sig-row2"><div><div class="sig-who">Tepper / Appaloosa</div><div class="sig-det">Added to NVDA — Q4 2025</div></div><div style="text-align:right;"><div class="sig-act act-buy">ADD</div><div style="font-family:var(--F);font-size:12px;font-weight:700;color:var(--acc);">+22%</div></div></div>
+      <div class="sig-row2"><div><div class="sig-who">Druckenmiller</div><div class="sig-det">New position in AMZN — Q4 2025</div></div><div style="text-align:right;"><div class="sig-act act-new">NEW</div><div style="font-family:var(--F);font-size:12px;font-weight:700;color:var(--blu);">$95M</div></div></div>
+    </div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ch"><div class="ct">Macro Events</div><div class="cs">How world events map to your holdings</div></div><div class="cb">
+      <div class="mac-e pos"><div class="me-t">Fed Signals 2 Rate Cuts in 2026</div><div class="me-d">Projected cuts in H2 2026. Historically drives growth stock outperformance in the following 18-24 months.</div><div class="me-i up">▲ Positive for NVDA, MSFT, PLTR, AMZN, META</div></div>
+      <div class="mac-e neu"><div class="me-t">Taiwan Strait Activity Elevated</div><div class="me-d">TSMC manufactures chips for NVDA, AMD, AAPL. Supply disruption risk elevated. Monitoring daily.</div><div class="me-i" style="color:var(--gld);">⚡ Watch: NVDA — diversifying via AVGO</div></div>
+      <div class="mac-e pos"><div class="me-t">AI Infrastructure CapEx Accelerating</div><div class="me-d">MSFT, AMZN, GOOGL, META committed $300B+ in AI CapEx — direct revenue for NVDA, AVGO, PLTR.</div><div class="me-i up">▲ Tailwind for 4 of your top 6 holdings</div></div>
+    </div></div>
+    <div class="card"><div class="ch"><div class="ct">Sector Performance Today</div></div><div class="cb"><div class="sec-grid">
+      <div class="sec-c"><div class="sec-n">Technology</div><div class="sec-v up">+1.8%</div></div>
+      <div class="sec-c"><div class="sec-n">Healthcare</div><div class="sec-v up">+0.4%</div></div>
+      <div class="sec-c"><div class="sec-n">Financials</div><div class="sec-v up">+0.9%</div></div>
+      <div class="sec-c"><div class="sec-n">Energy</div><div class="sec-v dn">-0.6%</div></div>
+      <div class="sec-c"><div class="sec-n">Consumer</div><div class="sec-v dn">-0.2%</div></div>
+      <div class="sec-c"><div class="sec-n">Utilities</div><div class="sec-v up">+0.1%</div></div>
+    </div></div></div>
+  </div>
+</div>
+
+<!-- ══ PRICING ══ -->
+<div class="pg" id="pg-pricing">
+  <div class="ph"><div class="pe">// Pricing</div><h1 class="pt">Start Free. <em>Level Up</em> When Ready.</h1><p class="ps">No minimums. No hidden fees. $0.50 flat per trade — we only win when you do.</p></div>
+  <div class="price-grid">
+    <div class="pc"><div class="pt-n">Free Forever</div><div class="p-amt"><sup>$</sup>0</div><div class="p-per">No credit card</div><div class="p-cash">💰 4.8% APY cash sweep — free for everyone</div><div class="pf-list"><div class="pf">AI portfolio recommendations</div><div class="pf">Risk quiz + 3 profiles</div><div class="pf">DCA scheduler</div><div class="pf">Simulation Lab (basic)</div><div class="pf">Dividend calendar</div><div class="pf">Weekly AI insights</div><div class="pf no">Daily Hold/Sell signals</div><div class="pf no">Management team scoring</div><div class="pf no">Auto-rebalancing</div></div><button class="p-btn pbout" onclick="openLogin()">Get Started Free</button></div>
+    <div class="pc pop"><div class="pop-lbl">Most Popular</div><div class="pt-n">Pro</div><div class="p-amt"><sup>$</sup>9</div><div class="p-per">per month · $0.50 per trade</div><div class="p-cash">💰 4.8% APY + premium money market</div><div class="pf-list"><div class="pf">Everything in Free</div><div class="pf">Daily Hold/Sell signals</div><div class="pf">Management team AI scoring</div><div class="pf">Auto-rebalancing</div><div class="pf">Earnings call analysis</div><div class="pf">Insider trade alerts</div><div class="pf">Full Simulation Lab</div><div class="pf">DRIP auto-reinvestment</div><div class="pf">Weekly check-in portfolio updates</div></div><button class="p-btn pbpri" onclick="openLogin()">Start 30-Day Free Trial</button></div>
+    <div class="pc"><div class="pt-n">Alpha</div><div class="p-amt"><sup>$</sup>29</div><div class="p-per">per month · $0.25 per trade</div><div class="p-cash">💰 Enhanced yield on cash balances</div><div class="pf-list"><div class="pf">Everything in Pro</div><div class="pf">Full learning agent access</div><div class="pf">CEO speech analysis</div><div class="pf">Leveraged ETF strategies</div><div class="pf">Challenge the AI feature</div><div class="pf">Deep research reports</div><div class="pf">Priority portfolio reviews</div></div><button class="p-btn pbout" onclick="openLogin()">Join Waitlist</button></div>
+  </div>
+  <div class="g2">
+    <div class="ref-card"><div style="font-family:var(--F);font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:3px;">Give $25. Get $25. <em style="font-family:var(--S);font-style:italic;color:var(--acc);">Invested.</em></div><div style="color:var(--mut);font-size:11px;margin-bottom:9px;">Real invested dollars added to both portfolios.</div><div class="ref-code"><span>ALPHAGEN-ALEX47</span><button class="btn bpri" style="font-size:10px;padding:4px 11px;" onclick="copyRef(this)">Copy</button></div><div class="ref-steps"><div><div class="rs-num">01</div><div style="font-family:var(--F);font-size:11px;font-weight:700;margin-bottom:2px;">Share Link</div><div style="font-size:9px;color:var(--mut);">Send to friends who keep saying they'll start investing.</div></div><div><div class="rs-num">02</div><div style="font-family:var(--F);font-size:11px;font-weight:700;margin-bottom:2px;">They Join</div><div style="font-size:9px;color:var(--mut);">Friend signs up and makes first investment.</div></div><div><div class="rs-num">03</div><div style="font-family:var(--F);font-size:11px;font-weight:700;margin-bottom:2px;">Both Get $25</div><div style="font-size:9px;color:var(--mut);">Invested dollars that compound over time.</div></div></div></div>
+    <div class="card"><div class="ch"><div class="ct">🎓 Campus Program</div><div class="cs">Free Pro access for university finance clubs</div></div><div class="cb" style="display:flex;flex-direction:column;gap:7px;"><div style="font-size:10px;color:var(--mut);line-height:1.65;margin-bottom:3px;">Free class accounts, real-money investment competitions, and curriculum integration for IU and partner universities.</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--sur);border-radius:var(--rs);"><div><div style="font-family:var(--F);font-weight:700;font-size:11px;">IU Investment Club</div><div style="font-size:9px;color:var(--mut);">310 members</div></div><span class="tag tg">FOUNDING</span></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--sur);border-radius:var(--rs);"><div><div style="font-family:var(--F);font-weight:700;font-size:11px;">IU Finance Association</div><div style="font-size:9px;color:var(--mut);">240 members</div></div><span class="tag tg">FOUNDING</span></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--sur);border-radius:var(--rs);"><div><div style="font-family:var(--F);font-weight:700;font-size:11px;">NYU Stern</div><div style="font-size:9px;color:var(--mut);">Finance Club · 340 members</div></div><span class="tag tb2">APPLYING</span></div></div></div>
+  </div>
+</div>
+
+  </div><!-- content -->
+</div><!-- main -->
+
+<!-- ══ WHY MODAL ══ -->
+<div class="modal-bg" id="why-modal" onclick="if(event.target===this)closeWhy()">
+  <div class="mbox">
+    <div class="mh"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;"><div><div style="font-size:9px;color:var(--mut);margin-bottom:2px;">Why AlphaGen owns</div><div class="msym" id="why-sym">NVDA</div></div><button class="mclose" onclick="closeWhy()">×</button></div><div style="display:flex;gap:5px;flex-wrap:wrap;" id="why-chips"></div></div>
+    <div class="mscroll">
+      <div class="msec"><div class="mlbl">Investment Thesis</div><div class="mtxt" id="why-thesis"></div></div>
+      <div class="mmgrid" id="why-metrics"></div>
+      <div class="msec"><div class="mlbl">Management Assessment</div>
+        <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:7px;">
+          <div style="background:var(--adim);border:1px solid var(--aglow);border-radius:var(--rs);padding:8px 13px;text-align:center;flex-shrink:0;"><div style="font-family:var(--F);font-size:21px;font-weight:800;color:var(--acc);" id="why-mscore">9.8</div><div style="font-size:8px;color:var(--mut);">CEO SCORE</div></div>
+          <div class="mtxt" id="why-mgmt"></div>
+        </div>
+      </div>
+      <div class="msec"><div class="mlbl" style="color:var(--red);">Key Risks</div><div class="mtxt" id="why-risks"></div></div>
+      <div class="chal"><div class="chal-lbl">💬 Challenge the AI</div><textarea class="chal-ta" placeholder="Disagree? e.g. 'I think NVDA is overvalued because AMD inference competition is underpriced...'"></textarea><button class="btn bout" style="margin-top:6px;font-size:10px;" onclick="alert('Challenge submitted! AI reviews your reasoning within 24hrs.')">Submit →</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ THESIS MODAL ══ -->
+<div class="modal-bg" id="thesis-modal" onclick="if(event.target===this)closeThesis()">
+  <div class="mbox">
+    <div class="mh"><div style="display:flex;justify-content:space-between;align-items:flex-start;"><div><div style="font-size:9px;color:var(--mut);margin-bottom:2px;">Full AI Thesis</div><div class="msym" id="th-sym">NVDA</div></div><button class="mclose" onclick="closeThesis()">×</button></div></div>
+    <div class="mscroll">
+      <div style="background:var(--adim);border:1px solid var(--aglow);border-radius:var(--rs);padding:9px 11px;font-size:10px;color:var(--acc);margin-bottom:13px;">🤖 Structured for agent integration — connects to live data when agents deploy.</div>
+      <div class="msec"><div class="mlbl">Investment Thesis</div><div class="mtxt" id="th-thesis"></div></div>
+      <div class="mmgrid" id="th-metrics"></div>
+      <div class="msec"><div class="mlbl">Management Assessment</div>
+        <div style="display:flex;align-items:flex-start;gap:11px;">
+          <div style="background:var(--adim);border:1px solid var(--aglow);border-radius:var(--rs);padding:8px 13px;text-align:center;flex-shrink:0;"><div style="font-family:var(--F);font-size:21px;font-weight:800;color:var(--acc);" id="th-mscore">—</div><div style="font-size:8px;color:var(--mut);">CEO SCORE</div></div>
+          <div class="mtxt" id="th-mgmt"></div>
+        </div>
+      </div>
+      <div class="msec" style="margin-top:12px;"><div class="mlbl">Why It Fits Your Simulation</div><div class="mtxt" id="th-fit"></div></div>
+      <div class="msec"><div class="mlbl" style="color:var(--red);">Key Risks</div><div class="mtxt" id="th-risks"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WEEKLY CHECK-IN MODAL ══ -->
+<div class="checkin-modal" id="checkin-modal">
+  <div class="ci-box">
+    <div class="ci-head">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+        <div><div style="font-size:9px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;">Weekly Portfolio Check-In</div><div style="font-family:var(--F);font-size:17px;font-weight:800;letter-spacing:-.3px;" id="ci-heading">Quick update — 2 minutes</div></div>
+        <button class="mclose" onclick="closeCheckin()">×</button>
+      </div>
+      <div class="ci-prog" id="ci-prog"></div>
+    </div>
+    <div class="ci-scroll" id="ci-scroll"></div>
+    <div class="ci-foot">
+      <button class="btn bout" id="ci-back" onclick="ciNav(-1)" style="display:none;">← Back</button>
+      <span style="font-size:10px;color:var(--mut);" id="ci-counter">1 of 4</span>
+      <button class="btn bpri" id="ci-next" onclick="ciNav(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
