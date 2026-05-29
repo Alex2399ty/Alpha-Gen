@@ -221,6 +221,30 @@
     <div class="brief-body" id="brief-items"></div>
   </div>
 
+  <!-- Performance Chart -->
+  <div class="card" id="perf-card" style="margin-bottom:13px;">
+    <div class="ch">
+      <div><div class="ct">Portfolio Performance</div><div class="cs" id="perf-sub">Real price history · weighted by your allocation vs S&amp;P 500</div></div>
+      <div class="perf-tfs" id="perf-tfs">
+        <button class="perf-tf" data-r="1mo">1M</button>
+        <button class="perf-tf" data-r="3mo">3M</button>
+        <button class="perf-tf on" data-r="6mo">6M</button>
+        <button class="perf-tf" data-r="1y">1Y</button>
+        <button class="perf-tf" data-r="2y">2Y</button>
+      </div>
+    </div>
+    <div class="cb">
+      <div class="perf-legend">
+        <span class="perf-lg"><i style="background:var(--acc)"></i>Your Portfolio <strong id="perf-port-ret">—</strong></span>
+        <span class="perf-lg"><i style="background:var(--mut)"></i>S&amp;P 500 <strong id="perf-spx-ret">—</strong></span>
+      </div>
+      <div id="perf-chart-wrap" style="position:relative;width:100%;height:230px;">
+        <canvas id="perf-canvas" style="width:100%;height:230px;"></canvas>
+        <div id="perf-status" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--mut);">Loading real price history…</div>
+      </div>
+    </div>
+  </div>
+
   <div class="port-grid" style="margin-bottom:13px;">
     <!-- LEFT -->
     <div style="display:flex;flex-direction:column;gap:13px;">
@@ -653,32 +677,4 @@
           <div class="mtxt" id="th-mgmt"></div>
         </div>
       </div>
-      <div class="msec" style="margin-top:12px;"><div class="mlbl">Why It Fits Your Simulation</div><div class="mtxt" id="th-fit"></div></div>
-      <div class="msec"><div class="mlbl" style="color:var(--red);">Key Risks</div><div class="mtxt" id="th-risks"></div></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ WEEKLY CHECK-IN MODAL ══ -->
-<div class="checkin-modal" id="checkin-modal">
-  <div class="ci-box">
-    <div class="ci-head">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
-        <div><div style="font-size:9px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;">Weekly Portfolio Check-In</div><div style="font-family:var(--F);font-size:17px;font-weight:800;letter-spacing:-.3px;" id="ci-heading">Quick update — 2 minutes</div></div>
-        <button class="mclose" onclick="closeCheckin()">×</button>
-      </div>
-      <div class="ci-prog" id="ci-prog"></div>
-    </div>
-    <div class="ci-scroll" id="ci-scroll"></div>
-    <div class="ci-foot">
-      <button class="btn bout" id="ci-back" onclick="ciNav(-1)" style="display:none;">← Back</button>
-      <span style="font-size:10px;color:var(--mut);" id="ci-counter">1 of 4</span>
-      <button class="btn bpri" id="ci-next" onclick="ciNav(1)">Next →</button>
-    </div>
-  </div>
-</div>
-
-<script src="Data.js"></script>
-<script src="script.js"></script>
-</body>
-</html>
+      <div class="msec" style="margin-top:12px;"><div class="mlbl">Why It Fits Your Simulation</div><div c

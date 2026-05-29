@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx plugins *)",
+      "PowerShell(npx plugins add vercel/vercel-plugin)",
+      "PowerShell(git clone https://github.com/alex2399ty/AlphaGen.git C:\\\\Users\\\\alex2\\\\AlphaGen_temp 2>&1)",
+      "mcp__Claude_Preview__preview_start",
+      "Skill(schedule)",
+      "Skill(schedule:*)"
+    ]
+  }
+}

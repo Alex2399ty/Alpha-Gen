@@ -1059,3 +1059,118 @@ setInterval(agentHeartbeat,25000);
 
 // Init slider display values
 svUp();
+
+// ════════════════════════════════════════
+// PORTFOLIO PERFORMANCE CHART — real Yahoo history + S&P 500 benchmark
+// ════════════════════════════════════════
+(()=>{
+  // Allocation weights (match Holdings table)
+  const WEIGHTS={NVDA:18.2,MSFT:15.1,AMZN:12.4,META:11.3,PLTR:8.6,AVGO:7.2,JNJ:5.4};
+  const wTotal=Object.values(WEIGHTS).reduce((a,b)=>a+b,0);
+  const SYMS=Object.keys(WEIGHTS);
+  let curRange='6mo';
+  let drawData=null; // {labels, port[], spx[]}
+
+  async function yfChart(sym,range){
+    const url=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=${range}&interval=1d`;
+    let resp=null;
+    try{resp=await fetch(url,{signal:AbortSignal.timeout(5000)});}catch{}
+    if(!resp||!resp.ok){
+      try{resp=await fetch('https://corsproxy.io/?'+encodeURIComponent(url),{signal:AbortSignal.timeout(9000)});}catch{return null;}
+    }
+    try{
+      const j=await resp.json();
+      const r=j?.chart?.result?.[0];if(!r)return null;
+      const ts=r.timestamp||[];
+      const adj=r.indicators?.adjclose?.[0]?.adjclose;
+      const close=adj||r.indicators?.quote?.[0]?.close||[];
+      const out=[];
+      for(let i=0;i<ts.length;i++){if(close[i]!=null)out.push({t:ts[i],c:close[i]});}
+      return out;
+    }catch{return null;}
+  }
+
+  async function loadPerf(range){
+    const status=document.getElementById('perf-status');
+    if(status){status.style.display='flex';status.textContent='Loading real price history…';}
+    const all=await Promise.all(SYMS.map(s=>yfChart(s,range)));
+    const spxRaw=await yfChart('%5EGSPC',range);
+    const series={};let minLen=Infinity;
+    SYMS.forEach((s,i)=>{const d=all[i];if(d&&d.length>1){series[s]=d;minLen=Math.min(minLen,d.length);}});
+    const haveSyms=Object.keys(series);
+    if(!haveSyms.length||!spxRaw||spxRaw.length<2){
+      if(status){status.style.display='flex';status.textContent='Live history unavailable right now — retry in a moment.';}
+      return;
+    }
+    minLen=Math.min(minLen,spxRaw.length);
+    // Align: take last minLen points of each
+    const tail=(arr)=>arr.slice(arr.length-minLen);
+    const spx=tail(spxRaw);
+    const labels=spx.map(p=>p.t*1000);
+    // Effective weights over available symbols only
+    const wEff={};let wSum=0;haveSyms.forEach(s=>{wSum+=WEIGHTS[s];});
+    haveSyms.forEach(s=>{wEff[s]=WEIGHTS[s]/wSum;});
+    const port=new Array(minLen).fill(0);
+    haveSyms.forEach(s=>{
+      const d=tail(series[s]);const base=d[0].c;
+      for(let i=0;i<minLen;i++){port[i]+=wEff[s]*(d[i].c/base)*100;}
+    });
+    const spxBase=spx[0].c;const spxN=spx.map(p=>p.c/spxBase*100);
+    drawData={labels,port,spx:spxN};
+    const pr=port[port.length-1]-100, sr=spxN[spxN.length-1]-100;
+    const fmt=x=>(x>=0?'+':'')+x.toFixed(1)+'%';
+    const pEl=document.getElementById('perf-port-ret'),sEl=document.getElementById('perf-spx-ret');
+    if(pEl){pEl.textContent=fmt(pr);pEl.style.color=pr>=0?'var(--acc)':'var(--red)';}
+    if(sEl){sEl.textContent=fmt(sr);sEl.style.color=sr>=0?'var(--tex)':'var(--red)';}
+    const sub=document.getElementById('perf-sub');
+    if(sub)sub.textContent=`${haveSyms.length}/${SYMS.length} holdings · ${minLen} trading days · weighted vs S&P 500`;
+    if(status)status.style.display='none';
+    drawPerf();
+  }
+
+  function drawPerf(){
+    const cv=document.getElementById('perf-canvas');if(!cv||!drawData)return;
+    const wrap=document.getElementById('perf-chart-wrap');
+    const dpr=window.devicePixelRatio||1;
+    const W=wrap.clientWidth||600, H=230;
+    cv.width=W*dpr;cv.height=H*dpr;
+    const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+    const padL=8,padR=8,padT=10,padB=18;
+    const {labels,port,spx}=drawData;
+    const all=port.concat(spx);
+    let lo=Math.min(...all),hi=Math.max(...all);
+    const rng=(hi-lo)||1;lo-=rng*0.08;hi+=rng*0.08;
+    const x=i=>padL+(W-padL-padR)*(i/(port.length-1));
+    const y=v=>padT+(H-padT-padB)*(1-(v-lo)/(hi-lo));
+    // gridlines + baseline (100)
+    ctx.strokeStyle='rgba(90,106,138,0.12)';ctx.lineWidth=1;
+    for(let g=0;g<=3;g++){const gy=padT+(H-padT-padB)*g/3;ctx.beginPath();ctx.moveTo(padL,gy);ctx.lineTo(W-padR,gy);ctx.stroke();}
+    if(100>=lo&&100<=hi){ctx.strokeStyle='rgba(90,106,138,0.35)';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(padL,y(100));ctx.lineTo(W-padR,y(100));ctx.stroke();ctx.setLineDash([]);}
+    const line=(arr,color,fill)=>{
+      ctx.beginPath();arr.forEach((v,i)=>{i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v));});
+      if(fill){const grd=ctx.createLinearGradient(0,padT,0,H-padB);grd.addColorStop(0,'rgba(0,229,160,0.18)');grd.addColorStop(1,'rgba(0,229,160,0)');
+        ctx.lineTo(x(arr.length-1),H-padB);ctx.lineTo(x(0),H-padB);ctx.closePath();ctx.fillStyle=grd;ctx.fill();
+        ctx.beginPath();arr.forEach((v,i)=>{i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v));});}
+      ctx.strokeStyle=color;ctx.lineWidth=fill?2:1.5;ctx.lineJoin='round';ctx.stroke();
+    };
+    line(spx,'rgba(90,106,138,0.85)',false);
+    line(port,'#00e5a0',true);
+    // date endpoints
+    ctx.fillStyle='#5a6a8a';ctx.font='9px monospace';ctx.textBaseline='alphabetic';
+    const d0=new Date(labels[0]),d1=new Date(labels[labels.length-1]);
+    const ds=d=>(d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2);
+    ctx.textAlign='left';ctx.fillText(ds(d0),padL,H-5);
+    ctx.textAlign='right';ctx.fillText(ds(d1),W-padR,H-5);
+  }
+
+  // wire timeframe buttons
+  document.getElementById('perf-tfs')?.addEventListener('click',e=>{
+    const b=e.target.closest('.perf-tf');if(!b)return;
+    document.querySelectorAll('.perf-tf').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');curRange=b.dataset.r;loadPerf(curRange);
+  });
+  window.addEventListener('resize',()=>{if(drawData)drawPerf();});
+
+  // initial load (slight delay so layout settles)
+  setTimeout(()=>loadPerf(curRange),400);
+})();

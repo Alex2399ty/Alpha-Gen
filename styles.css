@@ -664,3 +664,13 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px;}
   .stk-panel{width:100%;right:-100%;}
   .stk-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
 }
+
+/* ── Portfolio Performance Chart ── */
+.perf-tfs{display:flex;gap:4px;}
+.perf-tf{background:transparent;border:1px solid var(--bdr);color:var(--mut);font-family:var(--F);font-size:9px;font-weight:700;padding:4px 8px;border-radius:6px;cursor:pointer;transition:all .15s;letter-spacing:.04em;}
+.perf-tf:hover{border-color:var(--bdr2);color:var(--tex);}
+.perf-tf.on{background:var(--adim);border-color:var(--acc);color:var(--acc);}
+.perf-legend{display:flex;gap:18px;margin-bottom:8px;font-size:10px;color:var(--mut);}
+.perf-lg{display:flex;align-items:center;gap:6px;}
+.perf-lg i{width:12px;height:3px;border-radius:2px;display:inline-block;}
+.perf-lg strong{font-family:var(--M);font-size:11px;}
