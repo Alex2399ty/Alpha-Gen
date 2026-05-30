@@ -99,7 +99,7 @@
       <div><div class="tb-title" id="tb-title">Portfolio</div><div class="tb-sub" id="tb-sub">Growth Seeker · Synced with Robinhood</div></div>
     </div>
     <div class="tb-r">
-      <div class="chip"><span class="live"></span>Markets Open</div>
+      <div class="chip" id="market-chip"><span class="live" id="market-dot"></span><span id="market-label">Checking…</span></div>
       <div class="chip" onclick="openCheckin()">🔄 Weekly Check-In</div>
       <div class="chip" onclick="openBrokerModal()">🔗 Connect Brokerage</div>
       <button class="btn bpri" style="font-size:11px;padding:6px 12px;" onclick="openLogin()">+ Add Funds</button>
@@ -596,6 +596,8 @@
 <!-- ══ MARKETS ══ -->
 <div class="pg" id="pg-markets">
   <div class="ph"><div class="pe">// Markets</div><h1 class="pt">What's Moving <em>Your Portfolio</em></h1><p class="ps">Insider trades, institutional moves, macro events — filtered to what matters for your holdings.</p></div>
+  <!-- FRED Live Macro Data Row -->
+  <div id="fred-row" style="display:none;gap:8px;margin-bottom:13px;flex-wrap:wrap;"></div>
   <div class="g2" style="margin-bottom:13px;">
     <div class="card"><div class="ch"><div class="ct">Insider Trades (Form 4)</div><div class="cs">SEC filings · Daily</div></div><div class="cb">
       <div class="sig-row2"><div><div class="sig-who">PLTR — Alex Karp (CEO)</div><div class="sig-det">Open market purchase · Feb 28</div></div><div style="text-align:right;"><div class="sig-act act-buy">BUY</div><div style="font-family:var(--F);font-size:12px;font-weight:700;color:var(--acc);">$2.1M</div></div></div>
@@ -677,4 +679,59 @@
           <div class="mtxt" id="th-mgmt"></div>
         </div>
       </div>
-      <div class="msec" style="margin-top:12px;"><div class="mlbl">Why It Fits Your Simulation</div><div c
+      <div class="msec" style="margin-top:12px;"><div class="mlbl">Why It Fits Your Simulation</div><div class="mtxt" id="th-fit"></div></div>
+      <div class="msec"><div class="mlbl" style="color:var(--red);">Key Risks</div><div class="mtxt" id="th-risks"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WEEKLY CHECK-IN MODAL ══ -->
+<div class="checkin-modal" id="checkin-modal">
+  <div class="ci-box">
+    <div class="ci-head">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+        <div><div style="font-size:9px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;">Weekly Portfolio Check-In</div><div style="font-family:var(--F);font-size:17px;font-weight:800;letter-spacing:-.3px;" id="ci-heading">Quick update — 2 minutes</div></div>
+        <button class="mclose" onclick="closeCheckin()">×</button>
+      </div>
+      <div class="ci-prog" id="ci-prog"></div>
+    </div>
+    <div class="ci-scroll" id="ci-scroll"></div>
+    <div class="ci-foot">
+      <button class="btn bout" id="ci-back" onclick="ciNav(-1)" style="display:none;">← Back</button>
+      <span style="font-size:10px;color:var(--mut);" id="ci-counter">1 of 4</span>
+      <button class="btn bpri" id="ci-next" onclick="ciNav(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ AI CHATBOT ══ -->
+<button class="chat-fab" id="chat-fab" onclick="toggleChat()">
+  <span style="font-size:16px;line-height:1;">🤖</span>
+  <span>AI Advisor</span>
+  <div class="chat-fab-badge" id="chat-badge" style="display:none;">1</div>
+</button>
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-head">
+    <div style="display:flex;align-items:center;gap:9px;">
+      <div class="chat-avatar-ico">AI</div>
+      <div>
+        <div style="font-family:var(--F);font-size:12px;font-weight:800;">AlphaGen Advisor</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--acc);"><span class="live"></span>Portfolio-aware · Always on</div>
+      </div>
+    </div>
+    <button class="mclose" onclick="toggleChat()">×</button>
+  </div>
+  <div class="chat-msgs" id="chat-msgs"></div>
+  <div class="chat-footer">
+    <div class="chat-input-row">
+      <input class="fi chat-input" id="chat-input" placeholder="Ask about your portfolio…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendChat();event.preventDefault();}"/>
+      <button class="btn bpri chat-send" onclick="sendChat()">→</button>
+    </div>
+    <div style="font-size:9px;color:var(--fnt);text-align:center;padding:4px 0 8px;">AlphaGen AI Advisor · Powered by your portfolio data</div>
+  </div>
+</div>
+
+<script src="Data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

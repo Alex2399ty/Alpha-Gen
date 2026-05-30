@@ -1174,3 +1174,304 @@ svUp();
   // initial load (slight delay so layout settles)
   setTimeout(()=>loadPerf(curRange),400);
 })();
+
+// ════════════════════════════════════════
+// MARKET HOURS DETECTION (ET timezone)
+// ════════════════════════════════════════
+function updateMarketStatus(){
+  const now=new Date();
+  const et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const day=et.getDay(),h=et.getHours(),m=et.getMinutes();
+  const mins=h*60+m;
+  const isWeekday=day>=1&&day<=5;
+  const label=document.getElementById('market-label');
+  const dot=document.getElementById('market-dot');
+  const chip=document.getElementById('market-chip');
+  if(!label)return;
+  if(isWeekday&&mins>=570&&mins<960){
+    label.textContent='Markets Open';
+    if(dot)dot.style.background='var(--acc)';
+    if(chip)chip.style.color='var(--acc)';
+  } else if(isWeekday&&mins>=240&&mins<570){
+    label.textContent='Pre-Market';
+    if(dot){dot.style.background='var(--gld)';dot.style.animation='none';}
+    if(chip)chip.style.color='var(--gld)';
+  } else if(isWeekday&&mins>=960&&mins<1200){
+    label.textContent='After Hours';
+    if(dot){dot.style.background='var(--gld)';dot.style.animation='none';}
+    if(chip)chip.style.color='var(--gld)';
+  } else{
+    label.textContent='Markets Closed';
+    if(dot){dot.style.background='var(--mut)';dot.style.animation='none';}
+    if(chip)chip.style.color='var(--mut)';
+  }
+}
+updateMarketStatus();
+setInterval(updateMarketStatus,60000);
+
+// ════════════════════════════════════════
+// FRED MACRO DATA — free, no API key
+// ════════════════════════════════════════
+const FRED={};
+async function fetchFred(id){
+  try{
+    const url=`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${id}`;
+    const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url),{signal:AbortSignal.timeout(7000)});
+    const txt=await r.text();
+    const lines=txt.trim().split('\n').filter(l=>l&&!l.startsWith('DATE'));
+    const last=lines[lines.length-1].split(',');
+    return{date:last[0],value:parseFloat(last[1])};
+  }catch{return null;}
+}
+(async()=>{
+  const [fed,t10,cpi,unemp]=await Promise.allSettled([
+    fetchFred('DFF'),      // Fed Funds Rate
+    fetchFred('DGS10'),    // 10-yr Treasury
+    fetchFred('CPIAUCSL'), // CPI
+    fetchFred('UNRATE'),   // Unemployment
+  ]);
+  if(fed.value)FRED.fedRate=fed.value.value;
+  if(t10.value)FRED.t10y=t10.value.value;
+  if(cpi.value)FRED.cpi=cpi.value.value;
+  if(unemp.value)FRED.unemp=unemp.value.value;
+  // Update macro section on Markets page if visible
+  const fredRow=document.getElementById('fred-row');
+  if(fredRow&&Object.keys(FRED).length){
+    fredRow.innerHTML=[
+      (FRED.fedRate!=null&&!isNaN(FRED.fedRate))?`<div class="fred-badge"><div class="fred-val">${FRED.fedRate.toFixed(2)}%</div><div class="fred-label">Fed Funds Rate</div></div>`:'',
+      (FRED.t10y!=null&&!isNaN(FRED.t10y))?`<div class="fred-badge"><div class="fred-val">${FRED.t10y.toFixed(2)}%</div><div class="fred-label">10-Yr Treasury</div></div>`:'',
+      (FRED.cpi!=null&&!isNaN(FRED.cpi))?`<div class="fred-badge"><div class="fred-val">${FRED.cpi.toFixed(1)}</div><div class="fred-label">CPI Index</div></div>`:'',
+      (FRED.unemp!=null&&!isNaN(FRED.unemp))?`<div class="fred-badge"><div class="fred-val">${FRED.unemp.toFixed(1)}%</div><div class="fred-label">Unemployment</div></div>`:'',
+    ].filter(Boolean).join('');
+    fredRow.style.display='flex';
+  }
+})();
+
+// ════════════════════════════════════════
+// REAL NEWS — Yahoo Finance RSS via proxy
+// ════════════════════════════════════════
+async function fetchYahooNews(sym){
+  const rss=`https://feeds.finance.yahoo.com/rss/2.0/headline?s=${sym}&region=US&lang=en-US`;
+  try{
+    const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(rss),{signal:AbortSignal.timeout(6000)});
+    const txt=await r.text();
+    const doc=new DOMParser().parseFromString(txt,'text/xml');
+    return[...doc.querySelectorAll('item')].slice(0,3).map(item=>({
+      sym,
+      ico:'📰',
+      title:item.querySelector('title')?.textContent?.substring(0,90)||'',
+      src:'Yahoo Finance',
+      time:item.querySelector('pubDate')?.textContent?new Date(item.querySelector('pubDate').textContent).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Recent',
+      imp:'▲ Real-time news',tag:'up',
+      ai:`This is live news for ${sym} from Yahoo Finance. The full AlphaGen AI News Agent will automatically analyze this story, score its sentiment, and explain exactly how it affects your ${sym} position and thesis — without you having to read financial news yourself.`,
+    }));
+  }catch{return[];}
+}
+(async()=>{
+  const portfolio=['NVDA','MSFT','PLTR'];
+  const allNews=[];
+  for(const sym of portfolio){
+    const items=await fetchYahooNews(sym);
+    allNews.push(...items);
+    await new Promise(r=>setTimeout(r,300)); // gentle rate limit
+  }
+  if(allNews.length>=2){
+    // Splice real news into the pool at the front
+    NEWS_POOL.splice(0,Math.min(allNews.length,6),...allNews.slice(0,6));
+    renderNewsFeed();
+    const ps=document.getElementById('price-status');
+    // Already updated by price fetch
+  }
+})();
+// Refresh news every 10 minutes
+setInterval(async()=>{
+  const sym=['NVDA','MSFT','PLTR'][Math.floor(Date.now()/600000)%3];
+  const items=await fetchYahooNews(sym);
+  if(items.length){
+    // Add latest at front of pool
+    items.forEach(item=>{
+      const idx=NEWS_POOL.findIndex(n=>n.sym===item.sym);
+      if(idx>=0)NEWS_POOL.splice(idx,1,item);
+      else NEWS_POOL.unshift(item);
+    });
+    renderNewsFeed();
+  }
+},600000);
+
+// ════════════════════════════════════════
+// DYNAMIC SIGNAL UPDATES — price-triggered
+// ════════════════════════════════════════
+const prevPrices={};
+function checkSignalTriggers(){
+  DB.forEach(stock=>{
+    const prev=prevPrices[stock.s];
+    const curr=getLivePrice(stock.s);
+    if(!prev){prevPrices[stock.s]=curr;return;}
+    const pct=(curr-prev)/prev*100;
+    if(Math.abs(pct)>2.2){
+      const log=document.getElementById('agent-log');
+      if(!log)return;
+      const el=document.createElement('div');
+      el.className='act-entry';
+      el.style.animation='pgIn .3s ease both';
+      const up=pct>0;
+      const body=up
+        ?`Price surge <strong>+${pct.toFixed(1)}%</strong> — Signal Intelligence Agent re-evaluated. Confidence score updated to ${stock.confidence}%. Thesis intact.`
+        :`Price drop <strong>${pct.toFixed(1)}%</strong> — Signal Intelligence Agent monitoring. ${stock.signalType==='strong'?'STRONG HOLD maintained — thesis unchanged.':'Watching for further weakness before signal change.'}`;
+      el.innerHTML=`<span class="act-ico">${up?'⚡':'⚠'}</span><div class="act-body"><span class="act-sym">${stock.s}</span>${body}</div><span class="act-time">Just now</span>`;
+      log.insertBefore(el,log.firstChild);
+      while(log.children.length>16)log.removeChild(log.lastChild);
+      // Also update stock card if on stocks page
+      const card=document.querySelector(`.stk-card[onclick*="'${stock.s}'"]`);
+      if(card){card.style.borderColor=up?'var(--acc)':'var(--red)';setTimeout(()=>card.style.borderColor='',3000);}
+    }
+    prevPrices[stock.s]=curr;
+  });
+}
+setInterval(checkSignalTriggers,12000);
+
+// ════════════════════════════════════════
+// AI CHATBOT ADVISOR
+// ════════════════════════════════════════
+const CHAT_PORT=['NVDA','MSFT','AMZN','META','PLTR','AVGO','JNJ'];
+let chatOpen=false;
+
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById('chat-panel').classList.toggle('open',chatOpen);
+  document.getElementById('chat-badge').style.display='none';
+  if(chatOpen&&document.getElementById('chat-msgs').children.length===0){
+    setTimeout(()=>{
+      addChatMsg('ai',"Hey! I'm your AlphaGen AI advisor. I have full context on your portfolio — all 7 holdings, live prices, current signals, and the reasoning behind each one. What's on your mind?");
+      setTimeout(renderChatSugs,400);
+    },350);
+  }
+  if(chatOpen)setTimeout(()=>document.getElementById('chat-input')?.focus(),400);
+}
+
+const CHAT_SUGS=["How's my portfolio today?","Why is NVDA on STRONG HOLD?","What should I watch out for?","Best performer right now?","What's the Fed doing?","Show me my dividend income","Am I too concentrated in tech?"];
+let sugIdx=0;
+function renderChatSugs(){
+  const msgs=document.getElementById('chat-msgs');if(!msgs)return;
+  msgs.querySelectorAll('.chat-suggestions').forEach(el=>el.remove());
+  const div=document.createElement('div');div.className='chat-suggestions';
+  const shown=CHAT_SUGS.slice(sugIdx%CHAT_SUGS.length,(sugIdx%CHAT_SUGS.length)+4);
+  div.innerHTML=shown.map(s=>`<span class="chat-sug" onclick="quickChat(this.textContent)">${s}</span>`).join('');
+  sugIdx+=4;msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+function quickChat(txt){document.getElementById('chat-input').value=txt;sendChat();}
+
+function addChatMsg(type,text){
+  const msgs=document.getElementById('chat-msgs');if(!msgs)return;
+  msgs.querySelectorAll('.chat-suggestions').forEach(el=>el.remove());
+  const div=document.createElement('div');div.className=`chat-msg ${type}`;
+  div.innerHTML=text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+function showTyping(){
+  const msgs=document.getElementById('chat-msgs');if(!msgs)return;
+  const div=document.createElement('div');div.className='chat-msg typing';div.id='chat-typing';
+  div.innerHTML='<div class="chat-dots"><div class="chat-dot"></div><div class="chat-dot"></div><div class="chat-dot"></div></div>';
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+function hideTyping(){document.getElementById('chat-typing')?.remove();}
+
+function sendChat(){
+  const inp=document.getElementById('chat-input');
+  const msg=inp.value.trim();if(!msg)return;
+  inp.value='';
+  addChatMsg('user',msg);showTyping();
+  setTimeout(()=>{hideTyping();addChatMsg('ai',chatResponse(msg));if(Math.random()>.6)renderChatSugs();},650+Math.random()*900);
+}
+
+function chatResponse(msg){
+  const lo=msg.toLowerCase();
+  // Find mentioned stock (word-boundary match to prevent 'O' matching 'portfolio')
+  const sym=DB.map(s=>s.s).find(s=>{
+    const re=new RegExp('\\b'+s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
+    if(re.test(lo))return true;
+    const d=DB.find(d=>d.s===s);
+    return d?.n&&lo.includes(d.n.toLowerCase().split(' ')[0])&&d.n.split(' ')[0].length>3;
+  });
+
+  // Portfolio overview
+  if(/portfolio|holding|perform|doing|worth|total|value|overview/.test(lo)){
+    const chgs=CHAT_PORT.map(s=>getLiveChange(s)).filter(c=>isFinite(c));
+    const avg=chgs.reduce((a,b)=>a+b,0)/(chgs.length||1);
+    const strong=CHAT_PORT.filter(s=>DB.find(d=>d.s===s)?.signalType==='strong').length;
+    const watches=CHAT_PORT.filter(s=>['watch','swap'].includes(DB.find(d=>d.s===s)?.signalType));
+    return`Your portfolio is **${avg>=0?'up':'down'} ${Math.abs(avg).toFixed(2)}%** on average today.\n\n**Signal health:** ${strong} on STRONG HOLD · ${CHAT_PORT.length-strong-watches.length} on HOLD${watches.length?` · **${watches.join(', ')} flagged for review**`:''}\n\n**Portfolio score: 83/100** — well-constructed but tech-concentrated (correlation 0.72). Top performers today: ${CHAT_PORT.map(s=>({s,c:getLiveChange(s)})).sort((a,b)=>b.c-a.c).slice(0,2).map(p=>`**${p.s}** ${p.c>=0?'+':''}${p.c.toFixed(2)}%`).join(', ')}.`;
+  }
+
+  // Signal explanation
+  if(sym&&/why|signal|hold|reason|recommend|explain/.test(lo)){
+    const d=DB.find(s=>s.s===sym);if(!d)return`No data for ${sym}.`;
+    const price=getLivePrice(sym),chg=getLiveChange(sym);
+    const sigLabels={strong:'STRONG HOLD',hold:'HOLD',watch:'WATCH',swap:'CONSIDER SWAP'};
+    return`**${sym} — ${sigLabels[d.signalType]||'HOLD'} (${d.confidence}% confidence)**\n\n${d.reason}\n\n**CEO Score: ${d.mgmt}/10** — ${d.mgmt>=9.3?'elite, top 5% of all executives scored':d.mgmt>=8.5?'strong execution history':'solid, consistent delivery'}.\n\nCurrently **$${price>=1000?price.toFixed(0):price.toFixed(2)}** (${chg>=0?'+':''}${chg.toFixed(2)}% today). 1-year target: **${getPriceTargets(sym).yr1.price}** (${getPriceTargets(sym).yr1.ret}).`;
+  }
+
+  // General stock info
+  if(sym){
+    const d=DB.find(s=>s.s===sym)||SDB.find(s=>s.s===sym);
+    if(!d)return`${sym} isn't in AlphaGen's current database. I can discuss NVDA, MSFT, AMZN, META, PLTR, AVGO, JNJ, COST, LLY, V, AMD, AAPL, GOOGL, and 30+ others.`;
+    const price=getLivePrice(sym),chg=getLiveChange(sym);
+    const sigLabels={strong:'STRONG HOLD',hold:'HOLD',watch:'WATCH',swap:'CONSIDER SWAP'};
+    const tgt=getPriceTargets(sym);
+    return`**${sym} — ${d.n}** · $${price>=1000?price.toFixed(0):price.toFixed(2)} (${chg>=0?'+':''}${chg.toFixed(2)}% today)\n\n**Signal:** ${sigLabels[d.signalType]||'HOLD'} · **CEO Score:** ${d.mgmt}/10 · **Risk:** ${d.risk}/10\n\n**Targets:** ${tgt.yr1.price} 1yr (${tgt.yr1.ret}) · ${tgt.yr5.price} 5yr (${tgt.yr5.ret})\n\n${(d.thesis||'').substring(0,120)}…\n\nAsk "why is ${sym} on ${sigLabels[d.signalType]||'HOLD'}?" for the full signal reasoning.`;
+  }
+
+  // Fed / macro (word boundaries to avoid matching "concentrated" → "rate")
+  if(/\bfed\b|\brate\b|inflation|\bcpi\b|\bmacro\b|\beconomy\b|\binterest\b|\btreasury\b|\byield\b/.test(lo)){
+    const goodFed=FRED.fedRate!=null&&!isNaN(FRED.fedRate);
+    const goodT10=FRED.t10y!=null&&!isNaN(FRED.t10y);
+    const goodCpi=FRED.cpi!=null&&!isNaN(FRED.cpi);
+    const fedStr=goodFed?`The **Fed Funds Rate is currently ${FRED.fedRate.toFixed(2)}%**`:'The Fed recently signaled 2 rate cuts in H2 2026';
+    const t10Str=goodT10?` with the **10-year Treasury at ${FRED.t10y.toFixed(2)}%**`:'';
+    const cpiStr=goodCpi?` CPI index: **${FRED.cpi.toFixed(1)}**.`:'';
+    return`${fedStr}${t10Str}.${cpiStr}\n\nFor your portfolio, rate cuts are a **direct tailwind** — lower discount rates make future earnings worth more today. Your biggest beneficiaries: **NVDA, MSFT, PLTR, and AMZN**.\n\nThe main macro risk right now is geopolitical: Taiwan Strait tensions create tail risk for NVDA and AAPL (both TSMC-dependent). Our Macro Agent is monitoring this daily.`;
+  }
+
+  // News
+  if(/news|today|happening|latest|update|what.*going/.test(lo)){
+    const top=NEWS_POOL.slice(0,3);
+    return`Here's what's moving your holdings right now:\n\n${top.map(n=>`• **${n.sym}**: ${n.title.substring(0,65)}…`).join('\n')}\n\nThe highest-signal item today is **PLTR** — Karp's $2.1M open-market purchase is the strongest insider conviction signal in your portfolio this week. Non-10b5-1 CEO purchases outperform the market by 8.2% on average over 12 months.`;
+  }
+
+  // Best performer
+  if(/best|top|highest|leading|winner|most/.test(lo)){
+    const ranked=CHAT_PORT.map(s=>({s,c:getLiveChange(s)})).sort((a,b)=>b.c-a.c);
+    const best=ranked[0];
+    return`Your best performer today is **${best.s}** at **${best.c>=0?'+':''}${best.c.toFixed(2)}%**.\n\n**Today's ranking:** ${ranked.map(p=>`${p.s} ${p.c>=0?'+':''}${p.c.toFixed(2)}%`).join(' · ')}\n\n${DB.find(d=>d.s===best.s)?.reason.substring(0,120)}…`;
+  }
+
+  // Risk / worried
+  if(/risk|worry|worried|safe|crash|drop|concerned|danger/.test(lo)){
+    const watches=CHAT_PORT.filter(s=>['watch','swap'].includes(DB.find(d=>d.s===s)?.signalType));
+    return`Your top three risk factors right now:\n\n**1. Concentration** — 6 of 7 holdings are tech/AI. A sector rotation would hit everything at once. Adding VYM or JNJ would drop correlation from 0.72 to ~0.58.\n\n**2. Geopolitical** — NVDA has ~25% of revenue exposed to China export restrictions and TSMC supply chain risk (Taiwan). This is a tail risk but real.\n\n**3. Valuation** — NVDA at 40x+ forward earnings and PLTR at 60x+ revenue require sustained 25-35% growth to justify prices. Any deceleration will re-rate them sharply.\n\n${watches.length?`**Currently flagged:** ${watches.join(', ')} — review these positions first.`:'All positions are currently on HOLD or STRONG HOLD.'} Want me to suggest a defensive hedge?`;
+  }
+
+  // Dividend
+  if(/dividend|income|drip|yield|payout|passive/.test(lo)){
+    return`Your portfolio generates **~$847/year ($70.58/month)** in dividend income.\n\n**Holdings paying dividends:**\n• **JNJ** — 3.2% yield · Dividend King · 62-year streak · DRIP active\n• **AVGO** — 1.6% yield · 34% 5yr dividend CAGR\n• **MSFT** — 0.7% yield · Dividend Aristocrat · 22-year streak\n• **META** — 0.4% yield · New dividend, growing fast\n\n**20-year DRIP projection:** $38,400 from dividend reinvestment alone at 7% avg annual growth.\n\nJNJ's 3.2% yield today becomes ~**8.4% yield-on-cost** in 15 years as the dividend compounds on your original purchase price.`;
+  }
+
+  // Concentration / diversification
+  if(/concentrat|diversif|tech|too much|balanced|allocation/.test(lo)){
+    return`Your portfolio is **73% technology/AI** across NVDA, MSFT, AMZN, META, PLTR, and AVGO. JNJ (5.4%) is your only true defensive holding.\n\nThis isn't necessarily wrong — tech generates higher long-term returns — but it does mean: in a tech sector selloff, everything moves down together.\n\n**To reduce concentration**, consider adding:\n• **COST** (Consumer/Retail) — 9.4/10 CEO score, near-zero beta to tech selloffs\n• **VYM** (Broad dividend ETF) — 2.9% yield, 450+ stocks, immediate diversification\n• **KO** or **PG** — Dividend Kings, defensive, 60+ year dividend streaks\n\nEven a 10% allocation to one defensive adds meaningful protection without significantly reducing returns.`;
+  }
+
+  // Help
+  if(/help|what can you|how.*work|capabilities/.test(lo)){
+    return`Here's what I can answer:\n\n**Portfolio:** "How's my portfolio?" · "What's my total return?" · "Am I too concentrated?"\n\n**Signals:** "Why is NVDA on STRONG HOLD?" · "What changed with PLTR?" · "Should I sell META?"\n\n**Any stock:** "Tell me about AMD" · "Is COST a good buy?" · "Compare NVDA vs AMD"\n\n**Market:** "What's the Fed doing?" · "How do rate cuts affect me?" · "What's in the news?"\n\n**Risk:** "Should I be worried?" · "What's my biggest risk?" · "How do I hedge?"\n\n**Income:** "How much dividend income do I make?" · "What's my DRIP projection?"\n\nJust ask naturally — I have your full portfolio context.`;
+  }
+
+  // Default
+  return`That's a great question. To give you the most useful answer, could you be more specific? For example:\n\n• Ask about a specific holding: **"What's happening with NVDA?"**\n• Ask for your portfolio overview: **"How's my portfolio today?"**\n• Ask about a risk: **"Should I be worried about the tech concentration?"**\n• Ask about the market: **"What's the Fed doing right now?"**\n\nI have full context on your 7 holdings, live prices, all current signals, and the complete investment thesis for each position.`;
+}
+
+// Show chat badge after 30s for new users (invite engagement)
+setTimeout(()=>{
+  const badge=document.getElementById('chat-badge');
+  if(badge&&!chatOpen){badge.style.display='flex';}
+},30000);
