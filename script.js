@@ -366,6 +366,7 @@ function _runSimCore(){
         </div>
       </div>
     </div>
+    <div class="disclosure disclosure-sim"><strong>Projections are illustrative only.</strong> Bull/base/bear cases are modeled estimates, not predictions. Actual returns will vary significantly and may be negative. AlphaGen does not guarantee any outcome.</div>
     <div class="card" style="margin-bottom:12px;">
       <div class="ch"><div><div class="ct">Holdings (${selected.length})</div><div class="cs">Click "Full Thesis" for AI reasoning, CEO score, and agent framework notes</div></div><span class="tag tg">Avg mgmt: ${avgM}/10</span></div>
       <div class="cb" style="padding:0 13px;">

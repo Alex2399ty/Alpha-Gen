@@ -711,3 +711,19 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px;}
 .fred-badge{display:inline-flex;align-items:center;gap:5px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rs);padding:6px 10px;font-size:10px;}
 .fred-val{font-family:var(--F);font-size:13px;font-weight:800;color:var(--acc);}
 .fred-label{font-size:9px;color:var(--mut);}
+
+/* ── Compliance disclosures ─────────────────────────── */
+.disclosure{font-size:9.5px;line-height:1.5;color:var(--mut);background:rgba(245,166,35,.05);border:1px solid rgba(245,166,35,.18);border-left:2px solid var(--gld);border-radius:6px;padding:8px 11px;margin:12px 0;}
+.disclosure strong{color:var(--gld);font-weight:700;}
+.disclosure-sim{margin:0 0 12px;}
+.app-disclaimer{max-width:1100px;margin:32px auto 80px;padding:16px 20px;font-size:10px;line-height:1.6;color:var(--mut);border-top:1px solid var(--bdr);}
+.app-disclaimer strong{color:var(--fnt);font-weight:700;}
+@media(max-width:680px){.app-disclaimer{margin:24px 14px 96px;}}
+
+/* Compliance disclosures */
+.disclosure{font-size:9.5px;line-height:1.5;color:var(--mut);background:rgba(245,166,35,.05);border:1px solid rgba(245,166,35,.18);border-left:2px solid var(--gld);border-radius:6px;padding:8px 11px;margin:12px 0;}
+.disclosure strong{color:var(--gld);font-weight:700;}
+.disclosure-sim{margin:0 0 12px;}
+.app-disclaimer{max-width:1100px;margin:32px auto 80px;padding:16px 20px;font-size:10px;line-height:1.6;color:var(--mut);border-top:1px solid var(--bdr);}
+.app-disclaimer strong{color:var(--fnt);font-weight:700;}
+@media(max-width:680px){.app-disclaimer{margin:24px 14px 96px;}}

@@ -1,0 +1,14 @@
+{
+  "name": "alphagen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AlphaGen — AI-powered wealth management for the next generation",
+  "workspaces": ["backend", "agents"],
+  "scripts": {
+    "dev:backend": "npm --workspace backend run dev",
+    "dev:agents": "npm --workspace agents run dev",
+    "build": "npm --workspace backend run build && npm --workspace agents run build",
+    "db:push": "echo 'Run db/schema.sql against your Supabase project (SQL editor or psql)'"
+  },
+  "engines": { "node": ">=20" }
+}
